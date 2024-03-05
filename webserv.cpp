@@ -8,6 +8,5 @@ int main(int ac, char **av){
         configPath = (ac == 1 ? "conf_files/default.conf" : av[1]);
         
     }
-
     return (0);
 }

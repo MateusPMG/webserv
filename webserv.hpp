@@ -19,5 +19,8 @@ class NetKing{
     private:
         
     public:
+        //this method will start the server and run it
+        //on a while(true) statement
+        void run_server();
 
 };
