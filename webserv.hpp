@@ -17,7 +17,10 @@
 
 class NetKing{
     private:
-        
+        //gona need a container for every socket (port?)
+        //a method for adding sockets
+        //a method deleting sockets
+        //a method for 
     public:
         //this method will start the server and run it
         //on a while(true) statement
