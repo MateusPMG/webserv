@@ -3,7 +3,7 @@
 Networking::Networking(){}
 
 Networking::~Networking(){
-    for (std::map<int, int>::iterator it = serverSockets.begin(); it != serverSockets.end(); it++){
+    for (std::map<std::pair<std::string, int>, int>::iterator it = serverSockets.begin(); it != serverSockets.end(); it++){
         close(it->second);
     }
 }
@@ -29,6 +29,15 @@ int Networking::CreateBindSocket(const char* ip, int port){
         std::cerr << "Error: Failed to bind socket to port " << port << std::endl;
         close (serverSocket);
         return (-1);
+    }
+    return (serverSocket);
+}
+
+bool Networking::addPort(const char* ip, int port){
+    int serverSocket = CreateBindSocket(ip, port);
+    if (serverSocket != -1){
+        serverSockets[std::make_pair(std::string(ip), port)] = serverSocket;
+        return (true);
     }
 }
 

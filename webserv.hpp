@@ -31,7 +31,7 @@ class Networking{
 		//this method creates sockets and binds them to a given port;
 		int CreateBindSocket(const char* ip, int port);
 		//this map will store the ports numbers and respective socket fds;
-		std::map<int, int> serverSockets;
+		std::map<std::pair<std::string, int>, int> serverSockets;
 		//
 		void acceptConnection();
 	public:
