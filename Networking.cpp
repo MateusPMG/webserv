@@ -39,6 +39,18 @@ bool Networking::addPort(const char* ip, int port){
         serverSockets[std::make_pair(std::string(ip), port)] = serverSocket;
         return (true);
     }
+    return (false);
+}
+
+bool Networking::startListening(){
+    for (std::map<std::pair<std::string, int>, int>::iterator it = serverSockets.begin(); it != serverSockets.end(); it++){
+        if (listen(it->second, SOMAXCONN) == -1){
+            std::cerr << "Error: Failed to start listening on port " << it->first.second << std::endl;
+            return false;
+        }
+        std::cout << "Server listening on port " << it->first.second << std::endl;   
+    }
+    return (true);
 }
 
 //main server loop
