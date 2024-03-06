@@ -1,7 +1,39 @@
 #include "webserv.hpp"
 
+Networking::Networking(){}
+
+Networking::~Networking(){
+    for (std::map<int, int>::iterator it = serverSockets.begin(); it != serverSockets.end(); it++){
+        close(it->second);
+    }
+}
+
+int Networking::CreateBindSocket(const char* ip, int port){
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket == -1){
+        std::cerr << "Error: Failed to create socket for port " << port << std::endl;
+        return (-1);
+    }
+    int bounce = 1;
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &bounce, sizeof(bounce)) == -1){
+        std::cerr << "Error: Setting socket options failed\n";
+        close (serverSocket);
+        return (-1);
+    }
+    struct sockaddr_in serverAddress;
+    std::memset(&serverAddress, 0, sizeof(serverAddress));
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(port);
+    serverAddress.sin_addr.s_addr = inet_addr(ip);
+    if (bind(serverSocket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){
+        std::cerr << "Error: Failed to bind socket to port " << port << std::endl;
+        close (serverSocket);
+        return (-1);
+    }
+}
+
 //main server loop
-void NetKing::run_server(){
+void Networking::runServer(){
     while (true){
     // Handle incoming connections and other I/O events
             // This is where you would use select() or poll() to handle multiple sockets concurrently
