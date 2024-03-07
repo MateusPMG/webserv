@@ -17,7 +17,7 @@
 //defines the close() function used to close the sockets in the destructor
 #include <unistd.h>
 //we will use the map container to map port numbers to sockets
-//keys will be the port number and the value will be the file descriptor of the socket~
+//keys will be the port number and the value will be the file descriptor of the socket
 #include <map>
 //printing and streams
 #include <iostream>

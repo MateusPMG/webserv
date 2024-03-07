@@ -1,0 +1,26 @@
+# Server configuration
+server {
+    port 8080;
+    host localhost;
+    server_name example.com;
+    error_pages {
+        404 /errors/404.html;
+        500 /errors/500.html;
+    }
+    limits {
+        client_body_size 10MB;
+    }
+    routes {
+        route / {
+            methods GET POST DELETE;
+            directory /var/www/html;
+            index index.html;
+            cgi .py;
+            upload_dir /var/www/uploads;
+        }
+        route /uploads {
+            methods POST;
+            upload_dir /var/www/uploads;
+        }
+    }
+}
