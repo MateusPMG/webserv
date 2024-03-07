@@ -1,7 +1,7 @@
 # Server configuration
 server {
     port 8080;
-    host localhost;
+    host localhost; #might be redudant
     server_name example.com;
     error_pages {
         404 /errors/404.html;
