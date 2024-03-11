@@ -4,7 +4,7 @@ ConfigParser::ConfigParser(const std::string& filename){
     parseConfigFile(filename);
 }
 
-void ConfigParser::parseConfigFile(const std::string& filename) {
+void ConfigParser::parseConfigFile(const std::string& filename){
     std::ifstream configFile(filename);
     if (!configFile.is_open()) {
         std::cerr << "Failed to open config file: " << filename << std::endl;
@@ -47,14 +47,14 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
         } else if (directive == "limits") {
             parseNestedBlock(iss, currentServer.limits);
         } else if (directive == "routes") {
-            parseNestedBlock(iss, currentServer.routes);
+            parseRoutesBlock(currentServer, iss);
         }
     }
     // Close the file
     configFile.close();
 }
 
-void ConfigParser::parseNestedBlock(std::istringstream& iss, std::map<std::string, std::string>& block) {
+void ConfigParser::parseNestedBlock(std::istringstream& iss, std::map<std::string, std::string>& block){
     std::string line;
     while (std::getline(iss, line) && line != "}") {
         // Trim leading and trailing whitespace from the line
@@ -67,7 +67,25 @@ void ConfigParser::parseNestedBlock(std::istringstream& iss, std::map<std::strin
     }
 }
 
-std::string trim(const std::string& str) {
+void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, std::istringstream& iss) {
+    std::string line;
+    while (std::getline(iss, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') {
+            continue; // Skip empty lines and comments
+        } else if (line == "}") {
+            return; // End of the "routes" block
+        } else if (line.substr(0, 6) == "route ") {
+            std::istringstream innerIss(line);
+            std::string directive, value;
+            innerIss >> directive >> value;
+            currentServer.routes[value]; // Create a new entry for the route in routes map
+            parseNestedBlock(iss, currentServer.routes[value]); // Parse nested block
+        }
+    }
+}
+
+std::string trim(const std::string& str){
     // Find the first non-whitespace character
     size_t start = str.find_first_not_of(" \t\n\r\f\v");
     // If the string is all whitespace, return an empty string
@@ -78,4 +96,16 @@ std::string trim(const std::string& str) {
     size_t end = str.find_last_not_of(" \t\n\r\f\v");
     // Extract the trimmed substring
     return str.substr(start, end - start + 1);
+}
+
+std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex){
+    return configData[serverIndex].serverConfig;
+}
+
+std::map<std::string, std::string> ConfigParser::getErrorPages(int serverIndex){
+    return configData[serverIndex].errorPages;
+}
+
+std::map<std::string, std::string> ConfigParser::getLimits(int serverIndex){
+    return configData[serverIndex].limits;
 }
