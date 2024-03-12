@@ -1,12 +1,20 @@
 NAME = webserv
+NAMED = webserv
 SRC = webserv.cpp ConfigParser.cpp
 CC = c++
-CFLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -g -fno-limit-debug-info -std=c++98 -fsanitize=address,undefined
+CCD = clang++
+CFLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -g -std=c++98 -fsanitize=address,undefined
+CFLAGSD = -Wall -Wextra -Werror -pedantic -Wshadow -g -fno-limit-debug-info -std=c++98 -fsanitize=address,undefined
 
 all:	$(NAME)
 
 $(NAME): $(SRC)
 		 $(CC) $(CFLAGS) $(^) -o $(NAME)
+
+debug:  $(NAMED)
+
+$(NAMED): $(SRC)
+		  $(CCD) $(CFLAGSD) $(^) -o $(NAMED)
 
 clean:
 			@rm -f $(OBJS)
