@@ -1,11 +1,24 @@
-#include "Configuration.hpp"
+#include "ConfigParser.hpp"
 
 ConfigParser::ConfigParser(const std::string& filename){
     parseConfigFile(filename);
 }
 
+std::string trim(const std::string& str){
+    // Find the first non-whitespace character
+    size_t start = str.find_first_not_of(" \t\n\r\f\v");
+    // If the string is all whitespace, return an empty string
+    if (start == std::string::npos) {
+        return "";
+    }
+    // Find the last non-whitespace character
+    size_t end = str.find_last_not_of(" \t\n\r\f\v");
+    // Extract the trimmed substring
+    return str.substr(start, end - start + 1);
+}
+
 void ConfigParser::parseConfigFile(const std::string& filename){
-    std::ifstream configFile(filename);
+    std::ifstream configFile(filename.c_str());
     if (!configFile.is_open()) {
         std::cerr << "Failed to open config file: " << filename << std::endl;
         return;
@@ -85,18 +98,6 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, std::istringstr
     }
 }
 
-std::string trim(const std::string& str){
-    // Find the first non-whitespace character
-    size_t start = str.find_first_not_of(" \t\n\r\f\v");
-    // If the string is all whitespace, return an empty string
-    if (start == std::string::npos) {
-        return "";
-    }
-    // Find the last non-whitespace character
-    size_t end = str.find_last_not_of(" \t\n\r\f\v");
-    // Extract the trimmed substring
-    return str.substr(start, end - start + 1);
-}
 
 std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex){
     return configData[serverIndex].serverConfig;
