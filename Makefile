@@ -1,7 +1,7 @@
 NAME = webserv
 SRC = webserv.cpp ConfigParser.cpp
-CC = @c++
-CFLAGS = -Wall -Wextra -Werror -g -std=c++98 #-fsanitize=address,undefined
+CC = c++
+CFLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -g -fno-limit-debug-info -std=c++98 -fsanitize=address,undefined
 
 all:	$(NAME)
 
