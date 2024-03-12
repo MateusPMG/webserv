@@ -22,7 +22,7 @@ class ConfigParser {
 private:
     std::vector<ServerConfig> configData;
     void parseConfigFile(const std::string& filename);
-	void parseNestedBlock(std::istringstream& iss, std::map<std::string, std::string>& block);
+	void parseNestedBlock(const std::string& blockContent, std::map<std::string, std::string>& block);
     void parseRoutesBlock(ServerConfig& currentServer, std::istringstream& iss);
 public:
     ConfigParser(const std::string& filename);

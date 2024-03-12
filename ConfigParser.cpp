@@ -56,9 +56,9 @@ void ConfigParser::parseConfigFile(const std::string& filename){
             iss >> value;
             currentServer.serverConfig["server_name"] = value;
         } else if (directive == "error_pages") {
-            parseNestedBlock(iss, currentServer.errorPages);
+            parseNestedBlock(line, currentServer.errorPages);
         } else if (directive == "limits") {
-            parseNestedBlock(iss, currentServer.limits);
+            parseNestedBlock(line, currentServer.limits);
         } else if (directive == "routes") {
             parseRoutesBlock(currentServer, iss);
         }
@@ -67,8 +67,10 @@ void ConfigParser::parseConfigFile(const std::string& filename){
     configFile.close();
 }
 
-void ConfigParser::parseNestedBlock(std::istringstream& iss, std::map<std::string, std::string>& block){
+void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<std::string, std::string>& block){
+    std::istringstream iss(blockContent);
     std::string line;
+    std::getline(iss, line);
     while (std::getline(iss, line) && line != "}") {
         // Trim leading and trailing whitespace from the line
         line = trim(line);
@@ -93,7 +95,7 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, std::istringstr
             std::string directive, value;
             innerIss >> directive >> value;
             currentServer.routes[value]; // Create a new entry for the route in routes map
-            parseNestedBlock(iss, currentServer.routes[value]); // Parse nested block
+            parseNestedBlock(line, currentServer.routes[value]); // Parse nested block
         }
     }
 }
