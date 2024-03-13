@@ -25,6 +25,12 @@ void ConfigParser::parseConfigFile(const std::string& filename){
     }
     std::string line;
     ServerConfig currentServer;
+    bool inErrorPagesBlock = false; // Flag to track if currently in an error pages block
+    bool inLimitsBlock = false;     // Flag to track if currently in a limits block
+    bool inRoutesBlock = false;     // Flag to track if currently in a routes block
+    bool inServerBlock = false;     // Flag to track if currently in a server block
+    bool serverBlockParsed = false; // Flag to track if server block has been parsed
+    std::string nestedBlockContent; // Buffer to store nested block content
     while (std::getline(configFile, line)) {
         // Trim leading and trailing whitespace from the line
         line = trim(line);
@@ -32,36 +38,71 @@ void ConfigParser::parseConfigFile(const std::string& filename){
         if (line.empty() || line[0] == '#') {
             continue;
         }
-        // Check if the line contains a server block
-        if (line == "server {") {
-            // Start of a new server block, create a new ServerConfig object
-            currentServer = ServerConfig();
-            continue;
-        } else if (line == "}") {
-            // End of the current server block, add it to the vector
-            configData.push_back(currentServer);
-            continue;
+        if (inErrorPagesBlock || inLimitsBlock || inRoutesBlock) {
+            if (line == "}") {
+                // End of the nested block
+                if (inErrorPagesBlock) {
+                    parseNestedBlock(nestedBlockContent, currentServer.errorPages);
+                    inErrorPagesBlock = false;
+                } else if (inLimitsBlock) {
+                    parseNestedBlock(nestedBlockContent, currentServer.limits);
+                    inLimitsBlock = false;
+                } else if (inRoutesBlock) {
+                    parseRoutesBlock(currentServer, nestedBlockContent);
+                    inRoutesBlock = false;
+                }
+                nestedBlockContent.clear(); // Clear the buffer for next nested block
+            } else {
+                // Append line to nested block content
+                nestedBlockContent += line + '\n';
+            }
+        } else if (inServerBlock) {
+            // Inside server block
+            if (line == "}") {
+                // End of the server block
+                if (!serverBlockParsed) {
+                    // Push back the current server configuration if not already done
+                    configData.push_back(currentServer);
+                    serverBlockParsed = true;
+                }
+                // Reset server configuration for the next server block
+                currentServer = ServerConfig();
+                inServerBlock = false;
+            } else {
+                // Parse server directives inside the server block
+                std::istringstream iss(line);
+                std::string directive, value;
+                iss >> directive >> value;
+                if (directive == "port") {
+                    currentServer.serverConfig["port"] = value;
+                } else if (directive == "host") {
+                    currentServer.serverConfig["host"] = value;
+                } else if (directive == "server_name") {
+                    currentServer.serverConfig["server_name"] = value;
+                } else if (directive == "error_pages") {
+                    inErrorPagesBlock = true;
+                    nestedBlockContent += line + '\n'; // Add the current line to the buffer
+                } else if (directive == "limits") {
+                    inLimitsBlock = true;
+                    nestedBlockContent += line + '\n';
+                } else if (directive == "routes") {
+                    inRoutesBlock = true;
+                    nestedBlockContent += line + '\n';
+                }
+            }
+        } else {
+            // Not inside a server block
+            if (line == "server {") {
+                // Start of a new server block, create a new ServerConfig object
+                currentServer = ServerConfig();
+                inServerBlock = true;
+                serverBlockParsed = false; // Reset the flag for the new server block
+            }
         }
-        // Parse server directives
-        std::istringstream iss(line);
-        std::string directive, value;
-        iss >> directive;
-        if (directive == "port") {
-            iss >> value;
-            currentServer.serverConfig["port"] = value;
-        } else if (directive == "host") {
-            iss >> value;
-            currentServer.serverConfig["host"] = value;
-        } else if (directive == "server_name") {
-            iss >> value;
-            currentServer.serverConfig["server_name"] = value;
-        } else if (directive == "error_pages") {
-            parseNestedBlock(line, currentServer.errorPages);
-        } else if (directive == "limits") {
-            parseNestedBlock(line, currentServer.limits);
-        } else if (directive == "routes") {
-            parseRoutesBlock(currentServer, iss);
-        }
+    }
+    // Push back the last server configuration if not already done
+    if (!serverBlockParsed && !currentServer.serverConfig.empty()) {
+        configData.push_back(currentServer);
     }
     // Close the file
     configFile.close();
@@ -82,7 +123,8 @@ void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<st
     }
 }
 
-void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, std::istringstream& iss) {
+void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::string& nestedBlockContent) {
+    std::istringstream iss(nestedBlockContent);
     std::string line;
     while (std::getline(iss, line)) {
         line = trim(line);

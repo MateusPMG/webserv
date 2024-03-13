@@ -23,7 +23,7 @@ private:
     std::vector<ServerConfig> configData;
     void parseConfigFile(const std::string& filename);
 	void parseNestedBlock(const std::string& blockContent, std::map<std::string, std::string>& block);
-    void parseRoutesBlock(ServerConfig& currentServer, std::istringstream& iss);
+    void parseRoutesBlock(ServerConfig& currentServer, const std::string& nestedBlockContent);
 public:
     ConfigParser(const std::string& filename);
     int getNumServers() const;
