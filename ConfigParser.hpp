@@ -32,4 +32,5 @@ public:
     std::map<std::string, std::string> getErrorPages(int serverIndex);
     std::map<std::string, std::string> getLimits(int serverIndex);
     std::map<std::string, std::map<std::string, std::set<std::string> > > getRoutes();
+    void printConfigData();
 };

@@ -144,48 +144,44 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
     std::istringstream iss(nestedBlockContent);
     std::string line;
     std::string currentRoute;
-    bool inRouteBlock = false; // Flag to track if currently parsing a route block
 
-    // Split the nestedBlockContent into lines
-    std::vector<std::string> lines;
     while (std::getline(iss, line)) {
-        lines.push_back(line);
-    }
+        line = trim(line);
 
-    // Iterate over each line
-    for (std::vector<std::string>::const_iterator it = lines.begin(); it != lines.end(); ++it) {
-        const std::string& currentLine = *it;
-        std::istringstream lineStream(currentLine);
-        std::string token;
-        lineStream >> token;
-
-        // Skip empty lines
-        if (token.empty()) {
+        if (line.empty()) {
             continue;
         }
 
-        if (token == "route") {
+        if (line.substr(0, 6) == "route ") {
             // Start of a new route block
-            currentRoute = currentLine.substr(6); // Extract route path
+            currentRoute = line.substr(6);
             currentRoute = trim(currentRoute);
             currentRoute = currentRoute.substr(0, currentRoute.size() - 1); // Remove trailing '{'
-            inRouteBlock = true;
-        } else if (token == "}") {
+        } else if (line == "}") {
             // End of the current route block
-            inRouteBlock = false;
-            currentRoute.clear(); // Reset currentRoute
-        } else if (inRouteBlock) {
+            currentRoute.clear();
+        } else if (!currentRoute.empty()) {
             // Parse directive-value pairs within the route block
-            std::string directive;
-            lineStream >> directive;
-            std::string value;
-            std::getline(lineStream, value); // Get the rest of the line as value
-            value = trim(value);
-            currentServer.routes[currentRoute][directive].insert(value);
+            size_t pos = line.find(' ');
+            if (pos != std::string::npos) {
+                std::string directive = line.substr(0, pos);
+                std::string values = line.substr(pos + 1);
+                directive = trim(directive);
+                values = trim(values);
+
+                std::istringstream valuesStream(values);
+                std::string value;
+                std::set<std::string> valueSet;
+                while (valuesStream >> value) {
+                    valueSet.insert(value);
+                }
+
+                currentServer.routes[currentRoute][directive] = valueSet;
+            }
         }
     }
 }
-
+    
 std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex){
     return configData[serverIndex].serverConfig;
 }
@@ -196,4 +192,50 @@ std::map<std::string, std::string> ConfigParser::getErrorPages(int serverIndex){
 
 std::map<std::string, std::string> ConfigParser::getLimits(int serverIndex){
     return configData[serverIndex].limits;
+}
+
+
+void ConfigParser::printConfigData() {
+    std::cout << "Printing Config Data:" << std::endl;
+    for (size_t i = 0; i < configData.size(); ++i) {
+        std::cout << "Server " << i + 1 << ":" << std::endl;
+        const ServerConfig& server = configData[i];
+        
+        // Print server config
+        std::cout << "Server Config:" << std::endl;
+        for (std::map<std::string, std::string>::const_iterator it = server.serverConfig.begin(); it != server.serverConfig.end(); ++it) {
+            std::cout << it->first << " : " << it->second << std::endl;
+        }
+        
+        // Print error pages
+        std::cout << "Error Pages:" << std::endl;
+        for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); it != server.errorPages.end(); ++it) {
+            std::cout << it->first << " : " << it->second << std::endl;
+        }
+        
+        // Print limits
+        std::cout << "Limits:" << std::endl;
+        for (std::map<std::string, std::string>::const_iterator it = server.limits.begin(); it != server.limits.end(); ++it) {
+            std::cout << it->first << " : " << it->second << std::endl;
+        }
+        
+        // Print routes
+        std::cout << "Routes:" << std::endl;
+        for (std::map<std::string, std::map<std::string, std::set<std::string> > >::const_iterator it = server.routes.begin(); it != server.routes.end(); ++it) {
+            const std::string& route = it->first;
+            const std::map<std::string, std::set<std::string> >& routeData = it->second;
+            std::cout << "Route: " << route << std::endl;
+            for (std::map<std::string, std::set<std::string> >::const_iterator jt = routeData.begin(); jt != routeData.end(); ++jt) {
+                const std::string& directive = jt->first;
+                const std::set<std::string>& values = jt->second;
+                std::cout << "    " << directive << " : ";
+                for (std::set<std::string>::const_iterator vt = values.begin(); vt != values.end(); ++vt) {
+                    std::cout << *vt << " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+        
+        std::cout << std::endl;
+    }
 }

@@ -8,6 +8,7 @@ int main(int ac, char **av){
         std::string configPath;
         configPath = (ac == 1 ? "conf_files/default_config.txt" : av[1]);
         ConfigParser parse(configPath);
+        parse.printConfigData();
     }
     return (0);
 }
