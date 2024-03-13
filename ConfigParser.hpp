@@ -6,13 +6,14 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 
 class ServerConfig {
 public:
     std::map<std::string, std::string> serverConfig;
     std::map<std::string, std::string> errorPages;
     std::map<std::string, std::string> limits;
-    std::map<std::string, std::map<std::string, std::string> > routes;
+    std::map<std::string, std::map<std::string, std::set<std::string> > > routes;
 };
 // this class will parse the config file and store the server directives
 // in a vector of serverconfig objects
@@ -30,5 +31,5 @@ public:
     std::map<std::string, std::string> getServerConfig(int serverIndex);
     std::map<std::string, std::string> getErrorPages(int serverIndex);
     std::map<std::string, std::string> getLimits(int serverIndex);
-    std::map<std::string, std::map<std::string, std::string> > getRoutes();
+    std::map<std::string, std::map<std::string, std::set<std::string> > > getRoutes();
 };

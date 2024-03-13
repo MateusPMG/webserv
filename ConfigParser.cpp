@@ -17,7 +17,7 @@ std::string trim(const std::string& str){
     return str.substr(start, end - start + 1);
 }
 
-void ConfigParser::parseConfigFile(const std::string& filename){
+void ConfigParser::parseConfigFile(const std::string& filename) {
     std::ifstream configFile(filename.c_str());
     if (!configFile.is_open()) {
         std::cerr << "Failed to open config file: " << filename << std::endl;
@@ -31,8 +31,9 @@ void ConfigParser::parseConfigFile(const std::string& filename){
     bool inServerBlock = false;     // Flag to track if currently in a server block
     bool serverBlockParsed = false; // Flag to track if server block has been parsed
     std::string nestedBlockContent; // Buffer to store nested block content
+    std::string routesBlockContent; // Store routes block content as string
+    int routesBlockNestingLevel = 0; // Track the nesting level of routes block
     while (std::getline(configFile, line)) {
-        // Trim leading and trailing whitespace from the line
         line = trim(line);
         // Skip empty lines and comments
         if (line.empty() || line[0] == '#') {
@@ -48,16 +49,22 @@ void ConfigParser::parseConfigFile(const std::string& filename){
                     parseNestedBlock(nestedBlockContent, currentServer.limits);
                     inLimitsBlock = false;
                 } else if (inRoutesBlock) {
-                    parseRoutesBlock(currentServer, nestedBlockContent);
-                    inRoutesBlock = false;
+                    if (routesBlockNestingLevel == 0) {
+                        // End of the routes block, send the entire content to parseRoutesBlock
+                        parseRoutesBlock(currentServer, routesBlockContent);
+                        inRoutesBlock = false;
+                        routesBlockContent.clear(); // Clear the buffer
+                    } else {
+                        // Append line to routes block content
+                        routesBlockContent += line + '\n';
+                    }
                 }
-                nestedBlockContent.clear(); // Clear the buffer for next nested block
+                nestedBlockContent.clear();
             } else {
                 // Append line to nested block content
                 nestedBlockContent += line + '\n';
             }
         } else if (inServerBlock) {
-            // Inside server block
             if (line == "}") {
                 // End of the server block
                 if (!serverBlockParsed) {
@@ -87,7 +94,7 @@ void ConfigParser::parseConfigFile(const std::string& filename){
                     nestedBlockContent += line + '\n';
                 } else if (directive == "routes") {
                     inRoutesBlock = true;
-                    nestedBlockContent += line + '\n';
+                    routesBlockNestingLevel = 0; // Reset nesting level
                 }
             }
         } else {
@@ -97,6 +104,16 @@ void ConfigParser::parseConfigFile(const std::string& filename){
                 currentServer = ServerConfig();
                 inServerBlock = true;
                 serverBlockParsed = false; // Reset the flag for the new server block
+            }
+        }
+        if (inRoutesBlock) {
+            if (line == "}")
+                routesBlockNestingLevel--;
+            routesBlockContent += line + '\n';
+            // Check if the line indicates the start of a nested block
+            if (inRoutesBlock && line.find("route /") == 0) {
+                // Increment nesting level
+                routesBlockNestingLevel++;
             }
         }
     }
@@ -126,22 +143,48 @@ void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<st
 void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::string& nestedBlockContent) {
     std::istringstream iss(nestedBlockContent);
     std::string line;
+    std::string currentRoute;
+    bool inRouteBlock = false; // Flag to track if currently parsing a route block
+
+    // Split the nestedBlockContent into lines
+    std::vector<std::string> lines;
     while (std::getline(iss, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#') {
-            continue; // Skip empty lines and comments
-        } else if (line == "}") {
-            return; // End of the "routes" block
-        } else if (line.substr(0, 6) == "route ") {
-            std::istringstream innerIss(line);
-            std::string directive, value;
-            innerIss >> directive >> value;
-            currentServer.routes[value]; // Create a new entry for the route in routes map
-            parseNestedBlock(line, currentServer.routes[value]); // Parse nested block
+        lines.push_back(line);
+    }
+
+    // Iterate over each line
+    for (std::vector<std::string>::const_iterator it = lines.begin(); it != lines.end(); ++it) {
+        const std::string& currentLine = *it;
+        std::istringstream lineStream(currentLine);
+        std::string token;
+        lineStream >> token;
+
+        // Skip empty lines
+        if (token.empty()) {
+            continue;
+        }
+
+        if (token == "route") {
+            // Start of a new route block
+            currentRoute = currentLine.substr(6); // Extract route path
+            currentRoute = trim(currentRoute);
+            currentRoute = currentRoute.substr(0, currentRoute.size() - 1); // Remove trailing '{'
+            inRouteBlock = true;
+        } else if (token == "}") {
+            // End of the current route block
+            inRouteBlock = false;
+            currentRoute.clear(); // Reset currentRoute
+        } else if (inRouteBlock) {
+            // Parse directive-value pairs within the route block
+            std::string directive;
+            lineStream >> directive;
+            std::string value;
+            std::getline(lineStream, value); // Get the rest of the line as value
+            value = trim(value);
+            currentServer.routes[currentRoute][directive].insert(value);
         }
     }
 }
-
 
 std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex){
     return configData[serverIndex].serverConfig;
