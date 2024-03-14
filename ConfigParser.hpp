@@ -34,3 +34,6 @@ public:
     std::map<std::string, std::map<std::string, std::set<std::string> > > getRoutes();
     void printConfigData();
 };
+
+
+//important note: i accept anything as long as it has the min required 
