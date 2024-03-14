@@ -5,15 +5,15 @@ ConfigParser::ConfigParser(const std::string& filename){
 }
 
 std::string trim(const std::string& str){
-    // Find the first non-whitespace character
+    //Find the first non-whitespace character
     size_t start = str.find_first_not_of(" \t\n\r\f\v");
-    // If the string is all whitespace, return an empty string
+    //If the string is all whitespace, return an empty string
     if (start == std::string::npos) {
         return "";
     }
-    // Find the last non-whitespace character
+    //Find the last non-whitespace character
     size_t end = str.find_last_not_of(" \t\n\r\f\v");
-    // Extract the trimmed substring
+    //Extract the trimmed substring
     return str.substr(start, end - start + 1);
 }
 
@@ -25,23 +25,23 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
     }
     std::string line;
     ServerConfig currentServer;
-    bool inErrorPagesBlock = false; // Flag to track if currently in an error pages block
-    bool inLimitsBlock = false;     // Flag to track if currently in a limits block
-    bool inRoutesBlock = false;     // Flag to track if currently in a routes block
-    bool inServerBlock = false;     // Flag to track if currently in a server block
-    bool serverBlockParsed = false; // Flag to track if server block has been parsed
-    std::string nestedBlockContent; // Buffer to store nested block content
-    std::string routesBlockContent; // Store routes block content as string
-    int routesBlockNestingLevel = 0; // Track the nesting level of routes block
+    bool inErrorPagesBlock = false; //Flag to track if currently in an error pages block
+    bool inLimitsBlock = false;     //Flag to track if currently in a limits block
+    bool inRoutesBlock = false;     //Flag to track if currently in a routes block
+    bool inServerBlock = false;     //Flag to track if currently in a server block
+    bool serverBlockParsed = false; //Flag to track if server block has been parsed
+    std::string nestedBlockContent; //Buffer to store nested block content
+    std::string routesBlockContent; //Store routes block content as string
+    int routesBlockNestingLevel = 0; //Track the nesting level of routes block
     while (std::getline(configFile, line)) {
         line = trim(line);
-        // Skip empty lines and comments
+        //Skip empty lines and comments
         if (line.empty() || line[0] == '#') {
             continue;
         }
         if (inErrorPagesBlock || inLimitsBlock || inRoutesBlock) {
             if (line == "}") {
-                // End of the nested block
+                //End of the nested block
                 if (inErrorPagesBlock) {
                     parseNestedBlock(nestedBlockContent, currentServer.errorPages);
                     inErrorPagesBlock = false;
@@ -50,36 +50,40 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
                     inLimitsBlock = false;
                 } else if (inRoutesBlock) {
                     if (routesBlockNestingLevel == 0) {
-                        // End of the routes block, send the entire content to parseRoutesBlock
+                        //End of the routes block, send the entire content to parseRoutesBlock
                         parseRoutesBlock(currentServer, routesBlockContent);
                         inRoutesBlock = false;
-                        routesBlockContent.clear(); // Clear the buffer
+                        routesBlockContent.clear(); //Clear the buffer
                     } else {
-                        // Append line to routes block content
+                        //Append line to routes block content
                         routesBlockContent += line + '\n';
                     }
                 }
                 nestedBlockContent.clear();
             } else {
-                // Append line to nested block content
+                //Append line to nested block content
                 nestedBlockContent += line + '\n';
             }
         } else if (inServerBlock) {
             if (line == "}") {
-                // End of the server block
+                //End of the server block
                 if (!serverBlockParsed) {
-                    // Push back the current server configuration if not already done
+                    //Push back the current server configuration if not already done
                     configData.push_back(currentServer);
                     serverBlockParsed = true;
                 }
-                // Reset server configuration for the next server block
+                //Reset server configuration for the next server block
                 currentServer = ServerConfig();
                 inServerBlock = false;
             } else {
-                // Parse server directives inside the server block
+                //Parse server directives inside the server block
                 std::istringstream iss(line);
                 std::string directive, value;
                 iss >> directive >> value;
+                //remove trailing semicolon
+                if (!value.empty() && value[value.length()-1] == ';') {
+                    value.erase(value.length()-1);
+                }
                 if (directive == "port") {
                     currentServer.serverConfig["port"] = value;
                 } else if (directive == "host") {
@@ -88,40 +92,40 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
                     currentServer.serverConfig["server_name"] = value;
                 } else if (directive == "error_pages") {
                     inErrorPagesBlock = true;
-                    nestedBlockContent += line + '\n'; // Add the current line to the buffer
+                    nestedBlockContent += line + '\n'; //Add the current line to the buffer
                 } else if (directive == "limits") {
                     inLimitsBlock = true;
                     nestedBlockContent += line + '\n';
                 } else if (directive == "routes") {
                     inRoutesBlock = true;
-                    routesBlockNestingLevel = 0; // Reset nesting level
+                    routesBlockNestingLevel = 0; //Reset nesting level
                 }
             }
         } else {
-            // Not inside a server block
+            //Not inside a server block
             if (line == "server {") {
-                // Start of a new server block, create a new ServerConfig object
+                //Start of a new server block, create a new ServerConfig object
                 currentServer = ServerConfig();
                 inServerBlock = true;
-                serverBlockParsed = false; // Reset the flag for the new server block
+                serverBlockParsed = false; //Reset the flag for the new server block
             }
         }
         if (inRoutesBlock) {
             if (line == "}")
                 routesBlockNestingLevel--;
             routesBlockContent += line + '\n';
-            // Check if the line indicates the start of a nested block
+            //Check if the line indicates the start of a nested block
             if (inRoutesBlock && line.find("route /") == 0) {
-                // Increment nesting level
+                //Increment nesting level
                 routesBlockNestingLevel++;
             }
         }
     }
-    // Push back the last server configuration if not already done
+    //Push back the last server configuration if not already done
     if (!serverBlockParsed && !currentServer.serverConfig.empty()) {
         configData.push_back(currentServer);
     }
-    // Close the file
+    //Close the file
     configFile.close();
 }
 
@@ -130,12 +134,16 @@ void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<st
     std::string line;
     std::getline(iss, line);
     while (std::getline(iss, line) && line != "}") {
-        // Trim leading and trailing whitespace from the line
+        //Trim leading and trailing whitespace from the line
         line = trim(line);
-        // Parse directive and value
+        //Parse directive and value
         std::istringstream innerIss(line);
         std::string directive, value;
         innerIss >> directive >> value;
+        //remove trailing semicolon
+        if (!value.empty() && value[value.length()-1] == ';') {
+            value.erase(value.length()-1);
+        }
         block[directive] = value;
     }
 }
@@ -153,26 +161,29 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
         }
 
         if (line.substr(0, 6) == "route ") {
-            // Start of a new route block
+            //Start of a new route block
             currentRoute = line.substr(6);
             currentRoute = trim(currentRoute);
-            currentRoute = currentRoute.substr(0, currentRoute.size() - 1); // Remove trailing '{'
+            currentRoute = currentRoute.substr(0, currentRoute.size() - 1); //Remove trailing '{'
         } else if (line == "}") {
-            // End of the current route block
+            //End of the current route block
             currentRoute.clear();
         } else if (!currentRoute.empty()) {
-            // Parse directive-value pairs within the route block
+            //Parse directive-value pairs within the route block
             size_t pos = line.find(' ');
             if (pos != std::string::npos) {
                 std::string directive = line.substr(0, pos);
                 std::string values = line.substr(pos + 1);
                 directive = trim(directive);
                 values = trim(values);
-
                 std::istringstream valuesStream(values);
                 std::string value;
                 std::set<std::string> valueSet;
                 while (valuesStream >> value) {
+                    // remove trailing semicolon
+                    if (!value.empty() && value[value.length()-1] == ';') {
+                    value.erase(value.length()-1);
+                    }
                     valueSet.insert(value);
                 }
 
