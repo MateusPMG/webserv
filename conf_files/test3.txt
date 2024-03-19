@@ -1,0 +1,13 @@
+server 
+    port 8080;
+    host localhost; #might be redudant
+    server_name test1.com;
+    error_pages
+    limits 
+        client_body_size ;
+    routes
+        route / 
+
+        route /uploads 
+            methods POST;
+            upload_dir var/www/uploads;

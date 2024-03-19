@@ -1,6 +1,6 @@
 NAME = webserv
 NAMED = webserv
-SRC = webserv.cpp ConfigParser.cpp
+SRC = main.cpp ConfigParser.cpp
 CC = c++
 CCD = clang++
 CFLAGS = -Wall -Wextra -Werror -pedantic -Wshadow -g -std=c++98 -gdwarf-2 #-fsanitize=address,undefined

@@ -16,9 +16,8 @@
 #include <netinet/in.h>
 //defines the close() function used to close the sockets in the destructor
 #include <unistd.h>
-//we will use the map container to map port numbers to sockets
-//keys will be the port number and the value will be the file descriptor of the socket
-#include <map>
+//vector to store socket fds for each server
+#include <vector>
 //printing and streams
 #include <iostream>
 //included for memset() function to reset struct values to 0 thus clearing trash values
@@ -29,9 +28,9 @@
 class Networking{
 	private:
 		//this method creates sockets and binds them to a given port;
-		int CreateBindSocket(const char* ip, int port);
+		int CreateBindSocket(int port);
 		//this map will store the ports numbers and respective socket fds;
-		std::map<std::pair<std::string, int>, int> serverSockets;
+		std::vector<int> server;
 		//this method accepts incoming connections on the server sockets
 		void acceptConnection();
 	public:
@@ -41,8 +40,4 @@ class Networking{
 		//this method will start the server and run it
 		//on a while(true) statement
 		void runServer();
-		//this method adds new ports to listen on
-		bool addPort(const char *ip, int port);
-		//this method starts listening for incoming requests
-		bool startListening();
 };

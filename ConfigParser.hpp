@@ -36,4 +36,4 @@ public:
 };
 
 
-//important note: i accept anything as long as it has the min required 
+//important note: i accept anything as long as it has the min required but must always have {}
