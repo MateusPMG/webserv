@@ -16,3 +16,27 @@ server {
         }
     }
 }
+
+server {
+    port 8081;
+    host localhost; #might be redudant
+    server_name test1_2.com;
+    error_pages {
+    }
+    limits {
+        client_body_size ;
+    }
+    routes {
+        route / {
+            methods GET POST DELETE;
+            directory var/www/html;
+            index index.html;
+            cgi .py;
+            auto_index on;
+        }
+        route /uploads {
+            methods POST;
+            upload_dir var/www/uploads;
+        }
+    }
+}

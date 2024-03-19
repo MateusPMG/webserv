@@ -165,6 +165,7 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
             currentRoute = line.substr(6);
             currentRoute = trim(currentRoute);
             currentRoute = currentRoute.substr(0, currentRoute.size() - 1); //Remove trailing '{'
+            currentRoute = trim(currentRoute);
         } else if (line == "}") {
             //End of the current route block
             currentRoute.clear();
@@ -180,7 +181,7 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
                 std::string value;
                 std::set<std::string> valueSet;
                 while (valuesStream >> value) {
-                    // remove trailing semicolon
+                    //remove trailing semicolon
                     if (!value.empty() && value[value.length()-1] == ';') {
                     value.erase(value.length()-1);
                     }
@@ -215,19 +216,19 @@ void ConfigParser::printConfigData() {
         // Print server config
         std::cout << "Server Config:" << std::endl;
         for (std::map<std::string, std::string>::const_iterator it = server.serverConfig.begin(); it != server.serverConfig.end(); ++it) {
-            std::cout << it->first << " : " << it->second << std::endl;
+            std::cout << it->first << " : " << it->second << "|" << std::endl;
         }
         
         // Print error pages
         std::cout << "Error Pages:" << std::endl;
         for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); it != server.errorPages.end(); ++it) {
-            std::cout << it->first << " : " << it->second << std::endl;
+            std::cout << it->first << " : " << it->second << "|" << std::endl;
         }
         
         // Print limits
         std::cout << "Limits:" << std::endl;
         for (std::map<std::string, std::string>::const_iterator it = server.limits.begin(); it != server.limits.end(); ++it) {
-            std::cout << it->first << " : " << it->second << std::endl;
+            std::cout << it->first << " : " << it->second << "|" << std::endl;
         }
         
         // Print routes
@@ -235,15 +236,15 @@ void ConfigParser::printConfigData() {
         for (std::map<std::string, std::map<std::string, std::set<std::string> > >::const_iterator it = server.routes.begin(); it != server.routes.end(); ++it) {
             const std::string& route = it->first;
             const std::map<std::string, std::set<std::string> >& routeData = it->second;
-            std::cout << "Route: " << route << std::endl;
+            std::cout << "Route: " << route << "|" << std::endl;
             for (std::map<std::string, std::set<std::string> >::const_iterator jt = routeData.begin(); jt != routeData.end(); ++jt) {
                 const std::string& directive = jt->first;
                 const std::set<std::string>& values = jt->second;
                 std::cout << "    " << directive << " : ";
                 for (std::set<std::string>::const_iterator vt = values.begin(); vt != values.end(); ++vt) {
-                    std::cout << *vt << " ";
+                    std::cout << *vt << "|" << " ";
                 }
-                std::cout << std::endl;
+                std::cout << "|" << std::endl;
             }
         }
         
