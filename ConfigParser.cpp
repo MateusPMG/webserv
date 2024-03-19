@@ -1,7 +1,8 @@
 #include "ConfigParser.hpp"
 
 ConfigParser::ConfigParser(const std::string& filename){
-    parseConfigFile(filename);
+    if (parseConfigFile(filename))
+		throw std::runtime_error("");
 }
 
 std::string trim(const std::string& str){
@@ -17,16 +18,21 @@ std::string trim(const std::string& str){
     return str.substr(start, end - start + 1);
 }
 
-void ConfigParser::parseConfigFile(const std::string& filename) {
+int ConfigParser::parseConfigFile(const std::string& filename) {
     std::ifstream configFile(filename.c_str());
     if (!configFile.is_open()) {
         std::cerr << "Failed to open config file: " << filename << std::endl;
-        return;
+        return(1);
+    }
+	 // Check if the file is empty
+    if (configFile.peek() == std::ifstream::traits_type::eof()) {
+        std::cerr << "Error-> " << filename << " is empty" << std::endl;
+        configFile.close();
+        return (1); 
     }
     std::string line;
     ServerConfig currentServer;
     bool inErrorPagesBlock = false; //Flag to track if currently in an error pages block
-    bool inLimitsBlock = false;     //Flag to track if currently in a limits block
     bool inRoutesBlock = false;     //Flag to track if currently in a routes block
     bool inServerBlock = false;     //Flag to track if currently in a server block
     bool serverBlockParsed = false; //Flag to track if server block has been parsed
@@ -39,19 +45,18 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
         if (line.empty() || line[0] == '#') {
             continue;
         }
-        if (inErrorPagesBlock || inLimitsBlock || inRoutesBlock) {
+        if (inErrorPagesBlock || inRoutesBlock) {
             if (line == "}") {
                 //End of the nested block
                 if (inErrorPagesBlock) {
                     parseNestedBlock(nestedBlockContent, currentServer.errorPages);
                     inErrorPagesBlock = false;
-                } else if (inLimitsBlock) {
-                    parseNestedBlock(nestedBlockContent, currentServer.limits);
-                    inLimitsBlock = false;
-                } else if (inRoutesBlock) {
+                }
+                else if (inRoutesBlock) {
                     if (routesBlockNestingLevel == 0) {
                         //End of the routes block, send the entire content to parseRoutesBlock
-                        parseRoutesBlock(currentServer, routesBlockContent);
+                        if (parseRoutesBlock(currentServer, routesBlockContent))
+							return (1);
                         inRoutesBlock = false;
                         routesBlockContent.clear(); //Clear the buffer
                     } else {
@@ -84,18 +89,30 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
                 if (!value.empty() && value[value.length()-1] == ';') {
                     value.erase(value.length()-1);
                 }
+				//check empty values
+				if (value.empty()){
+					std::cerr << "Error: empty value for directive" << std::endl;
+        			return(1);
+				}
                 if (directive == "port") {
+					int intValue = atoi(value.c_str());
+					if (intValue > 65535 || intValue < 1024 || (value.find_first_not_of("0123456789") != std::string::npos))
+					{
+						std::cerr << "Error: Invalid port number (valid 1024 - 65535)" << std::endl;
+        				return(1);
+					}
                     currentServer.serverConfig["port"] = value;
                 } else if (directive == "host") {
                     currentServer.serverConfig["host"] = value;
                 } else if (directive == "server_name") {
                     currentServer.serverConfig["server_name"] = value;
+                } else if (directive == "index") {
+                    currentServer.serverConfig["index"] = value;
+                } else if (directive == "client_body_size") {
+                    currentServer.serverConfig["client_body_size"] = value;
                 } else if (directive == "error_pages") {
                     inErrorPagesBlock = true;
                     nestedBlockContent += line + '\n'; //Add the current line to the buffer
-                } else if (directive == "limits") {
-                    inLimitsBlock = true;
-                    nestedBlockContent += line + '\n';
                 } else if (directive == "routes") {
                     inRoutesBlock = true;
                     routesBlockNestingLevel = 0; //Reset nesting level
@@ -127,9 +144,15 @@ void ConfigParser::parseConfigFile(const std::string& filename) {
     }
     //Close the file
     configFile.close();
+	//Check if no server blocks were found
+	if (configData.empty()) {
+		std::cerr << "Error: no server blocks found" << std::endl;
+        return(1);
+	}
+	return (0);
 }
 
-void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<std::string, std::string>& block){
+int ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<std::string, std::string>& block){
     std::istringstream iss(blockContent);
     std::string line;
     std::getline(iss, line);
@@ -144,11 +167,16 @@ void ConfigParser::parseNestedBlock(const std::string& blockContent, std::map<st
         if (!value.empty() && value[value.length()-1] == ';') {
             value.erase(value.length()-1);
         }
+		if (value.empty()){
+			std::cerr << "Error: empty value for directive" << std::endl;
+        	return(1);
+		}		
         block[directive] = value;
     }
+	return (0);
 }
 
-void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::string& nestedBlockContent) {
+int ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::string& nestedBlockContent) {
     std::istringstream iss(nestedBlockContent);
     std::string line;
     std::string currentRoute;
@@ -185,6 +213,10 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
                     if (!value.empty() && value[value.length()-1] == ';') {
                     value.erase(value.length()-1);
                     }
+					if (value.empty()){
+						std::cerr << "Error: empty value for directive" << std::endl;
+        				return(1);
+					}
                     valueSet.insert(value);
                 }
 
@@ -192,6 +224,7 @@ void ConfigParser::parseRoutesBlock(ServerConfig& currentServer, const std::stri
             }
         }
     }
+	return (0);
 }
     
 std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex){
@@ -201,11 +234,6 @@ std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex
 std::map<std::string, std::string> ConfigParser::getErrorPages(int serverIndex){
     return configData[serverIndex].errorPages;
 }
-
-std::map<std::string, std::string> ConfigParser::getLimits(int serverIndex){
-    return configData[serverIndex].limits;
-}
-
 
 void ConfigParser::printConfigData() {
     std::cout << "Printing Config Data:" << std::endl;
@@ -224,13 +252,7 @@ void ConfigParser::printConfigData() {
         for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); it != server.errorPages.end(); ++it) {
             std::cout << it->first << " : " << it->second << "|" << std::endl;
         }
-        
-        // Print limits
-        std::cout << "Limits:" << std::endl;
-        for (std::map<std::string, std::string>::const_iterator it = server.limits.begin(); it != server.limits.end(); ++it) {
-            std::cout << it->first << " : " << it->second << "|" << std::endl;
-        }
-        
+         
         // Print routes
         std::cout << "Routes:" << std::endl;
         for (std::map<std::string, std::map<std::string, std::set<std::string> > >::const_iterator it = server.routes.begin(); it != server.routes.end(); ++it) {
@@ -244,7 +266,7 @@ void ConfigParser::printConfigData() {
                 for (std::set<std::string>::const_iterator vt = values.begin(); vt != values.end(); ++vt) {
                     std::cout << *vt << "|" << " ";
                 }
-                std::cout << "|" << std::endl;
+                std::cout << std::endl;
             }
         }
         

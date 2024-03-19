@@ -17,7 +17,7 @@ server {
             auto_index on;
         }
         route /uploads {
-            methods POST;
+            methods ;
             upload_dir var/www/uploads;
         }
     }

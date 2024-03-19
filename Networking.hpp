@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-
+#include "Server.hpp"
+#include "ConfigParser.hpp"
 
 //NETWORKING
 
@@ -29,13 +30,13 @@ class Networking{
 	private:
 		//this method creates sockets and binds them to a given port;
 		int CreateBindSocket(int port);
-		//this map will store the ports numbers and respective socket fds;
-		std::vector<int> server;
+		//this vector will store the servers and their configs;
+		std::vector<Server> servers;
 		//this method accepts incoming connections on the server sockets
 		void acceptConnection();
 	public:
 		//constructor and destructor
-		Networking();
+		Networking(const ConfigParser& parser);
 		~Networking();
 		//this method will start the server and run it
 		//on a while(true) statement
