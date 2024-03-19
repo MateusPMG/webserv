@@ -39,12 +39,22 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
     std::string nestedBlockContent; //Buffer to store nested block content
     std::string routesBlockContent; //Store routes block content as string
     int routesBlockNestingLevel = 0; //Track the nesting level of routes block
+	int bracketCounter = 0; //track nr of brackets if its negative at any point or > 0 then exit
     while (std::getline(configFile, line)) {
         line = trim(line);
         //Skip empty lines and comments
         if (line.empty() || line[0] == '#') {
             continue;
         }
+		if (line.find('{') != std::string::npos) {
+   			bracketCounter++;
+		} else if (line.find('}') != std::string::npos) {
+    		bracketCounter--;
+		}
+		if (bracketCounter < 0) {
+			std::cerr << "Error: unmatched closing bracket" << std::endl;
+			return (1);
+		}
         if (inErrorPagesBlock || inRoutesBlock) {
             if (line == "}") {
                 //End of the nested block
@@ -148,6 +158,10 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
 	if (configData.empty()) {
 		std::cerr << "Error: no server blocks found" << std::endl;
         return(1);
+	}
+	if (bracketCounter > 0) {
+    	std::cerr << "Error: unmatched opening bracket" << std::endl;
+    	return (1);
 	}
 	return (0);
 }
