@@ -2,11 +2,9 @@ server {
     port 8080;
     host localhost; #might be redudant
     server_name test1.com;
-    error_pages {
-    }
     limits {
-        client_body_size ;
     }
+    client_body_size 10MB;
     routes {
         route / {
         }
@@ -23,9 +21,7 @@ server {
     server_name test1_2.com;
     error_pages {
     }
-    limits {
-        client_body_size ;
-    }
+    client_body_size 10MB;
     routes {
         route / {
             methods GET POST DELETE;

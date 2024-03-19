@@ -32,11 +32,9 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
     }
     std::string line;
     ServerConfig currentServer;
-    bool inErrorPagesBlock = false; //Flag to track if currently in an error pages block
     bool inRoutesBlock = false;     //Flag to track if currently in a routes block
     bool inServerBlock = false;     //Flag to track if currently in a server block
     bool serverBlockParsed = false; //Flag to track if server block has been parsed
-    std::string nestedBlockContent; //Buffer to store nested block content
     std::string routesBlockContent; //Store routes block content as string
     int routesBlockNestingLevel = 0; //Track the nesting level of routes block
 	int bracketCounter = 0; //track nr of brackets if its negative at any point or > 0 then exit
@@ -46,6 +44,14 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
         if (line.empty() || line[0] == '#') {
             continue;
         }
+		 // Check for opening and closing curly braces on the same line
+    	size_t openingBracePos = line.find('{');
+    	size_t closingBracePos = line.find('}');
+    	if (openingBracePos != std::string::npos && closingBracePos != std::string::npos) {
+        	// Error: Empty block detected
+        	std::cerr << "Error: Empty block" << std::endl;
+        	return 1;
+    	}
 		if (line.find('{') != std::string::npos) {
    			bracketCounter++;
 		} else if (line.find('}') != std::string::npos) {
@@ -55,14 +61,10 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
 			std::cerr << "Error: unmatched closing bracket" << std::endl;
 			return (1);
 		}
-        if (inErrorPagesBlock || inRoutesBlock) {
+        if (inRoutesBlock) {
             if (line == "}") {
                 //End of the nested block
-                if (inErrorPagesBlock) {
-                    parseNestedBlock(nestedBlockContent, currentServer.errorPages);
-                    inErrorPagesBlock = false;
-                }
-                else if (inRoutesBlock) {
+                if (inRoutesBlock) {
                     if (routesBlockNestingLevel == 0) {
                         //End of the routes block, send the entire content to parseRoutesBlock
                         if (parseRoutesBlock(currentServer, routesBlockContent))
@@ -74,14 +76,11 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
                         routesBlockContent += line + '\n';
                     }
                 }
-                nestedBlockContent.clear();
-            } else {
-                //Append line to nested block content
-                nestedBlockContent += line + '\n';
             }
         } else if (inServerBlock) {
             if (line == "}") {
                 //End of the server block
+				if (bracketCounter == 0){
                 if (!serverBlockParsed) {
                     //Push back the current server configuration if not already done
                     configData.push_back(currentServer);
@@ -90,7 +89,14 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
                 //Reset server configuration for the next server block
                 currentServer = ServerConfig();
                 inServerBlock = false;
-            } else {
+				} else {
+					bracketCounter--;
+				}
+			}
+			else if (line.empty()){
+				std::cerr << "Error: Empty block" << std::endl;
+        		return (1);
+			} else {
                 //Parse server directives inside the server block
                 std::istringstream iss(line);
                 std::string directive, value;
@@ -120,9 +126,8 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
                     currentServer.serverConfig["index"] = value;
                 } else if (directive == "client_body_size") {
                     currentServer.serverConfig["client_body_size"] = value;
-                } else if (directive == "error_pages") {
-                    inErrorPagesBlock = true;
-                    nestedBlockContent += line + '\n'; //Add the current line to the buffer
+                } else if (directive == "root") {
+                    currentServer.serverConfig["root"] = value;
                 } else if (directive == "routes") {
                     inRoutesBlock = true;
                     routesBlockNestingLevel = 0; //Reset nesting level
@@ -258,12 +263,6 @@ void ConfigParser::printConfigData() {
         // Print server config
         std::cout << "Server Config:" << std::endl;
         for (std::map<std::string, std::string>::const_iterator it = server.serverConfig.begin(); it != server.serverConfig.end(); ++it) {
-            std::cout << it->first << " : " << it->second << "|" << std::endl;
-        }
-        
-        // Print error pages
-        std::cout << "Error Pages:" << std::endl;
-        for (std::map<std::string, std::string>::const_iterator it = server.errorPages.begin(); it != server.errorPages.end(); ++it) {
             std::cout << it->first << " : " << it->second << "|" << std::endl;
         }
          

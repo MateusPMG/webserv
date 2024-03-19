@@ -4,10 +4,11 @@ server {
     server_name example.com;
     index index.html;
     client_body_size 10MB;
-    error_pages {
-        404 errors/404.html;
-        500 errors/500.html;
-    }
+    error_page 404.html;
+	root var/www;
+	limits {  
+
+	}
     routes {
         route / {
             methods GET POST DELETE;
