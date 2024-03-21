@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include "ConfigParser.hpp"
 
 class Routes{
     std::string directory;
@@ -19,7 +20,13 @@ class Server{
 		std::string host;
 		std::string server_name;
 		std::string index;
+		std::string directory;
+		std::string error_page_path;
 		size_t client_body_size;
 		int server_socket_fd;
 		std::map<std::string, Routes> routes;
+	public:
+		std::string findValue(const std::map<std::string, std::string>& myMap, const std::string& word);
+		size_t convertToBytes(const std::string& sizeInMB);
+		Server(const ServerConfig& config);
 };

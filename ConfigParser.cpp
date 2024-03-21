@@ -126,8 +126,10 @@ int ConfigParser::parseConfigFile(const std::string& filename) {
                     currentServer.serverConfig["index"] = value;
                 } else if (directive == "client_body_size") {
                     currentServer.serverConfig["client_body_size"] = value;
-                } else if (directive == "root") {
-                    currentServer.serverConfig["root"] = value;
+                } else if (directive == "directory") {
+                    currentServer.serverConfig["directory"] = value;
+				} else if (directive == "error_page") {
+                    currentServer.serverConfig["error_page"] = value;
                 } else if (directive == "routes") {
                     inRoutesBlock = true;
                     routesBlockNestingLevel = 0; //Reset nesting level

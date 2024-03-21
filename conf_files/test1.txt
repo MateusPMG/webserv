@@ -2,31 +2,20 @@ server {
     port 8080;
     host localhost; #might be redudant
     server_name test1.com;
-    limits {
-    }
     client_body_size 10MB;
-    routes {
-        route / {
-        }
-        route /uploads {
-            methods POST;
-            upload_dir var/www/uploads;
-        }
-    }
 }
 
 server {
     port 8081;
     host localhost; #might be redudant
     server_name test1_2.com;
-    error_pages {
-    }
+	index index.html;
     client_body_size 10MB;
     routes {
         route / {
             methods GET POST DELETE;
             directory var/www/html;
-            index index.html;
+            
             cgi .py;
             auto_index on;
         }
