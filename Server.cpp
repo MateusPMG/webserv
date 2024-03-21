@@ -80,7 +80,7 @@ void Server::setsocket(int fd){
 }
 
 int Server::getport(){
-	return (std::stoi(port));
+	return (atoi(port.c_str()));
 }
 
 int Server::getsocketfd(){

@@ -10,7 +10,8 @@ int main(int ac, char **av){
 			configPath = (ac == 1 ? "conf_files/default_config.txt" : av[1]);
 			ConfigParser parse(configPath);
 			Networking net(parse);
-			parse.printConfigData();
+			net.booting();
+			//parse.printConfigData();
 		}
 		catch(const std::exception& e)
 		{

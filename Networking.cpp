@@ -15,6 +15,7 @@ void Networking::booting(){
 		std::cout << "Server booted on port: " << (*it).getport() << std::endl;
 		std::cout << "Server socket: " << (*it).getsocketfd() << std::endl;
     }
+	
 }
 
 int Networking::bindcreatelisten(Server& server) {
