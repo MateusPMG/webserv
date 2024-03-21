@@ -33,7 +33,7 @@ class Networking{
 		//this vector will store the servers and their configs;
 		std::vector<Server> servers;
 		//this method accepts incoming connections on the server sockets
-		void acceptConnection();
+		//void acceptConnection();
 	public:
 		//constructor and destructor
 		Networking(const ConfigParser& parser);

@@ -5,13 +5,14 @@
 #include "ConfigParser.hpp"
 
 class Routes{
-    std::string directory;
-    std::vector<std::string> methods;
-    bool auto_index;
-    bool hasCGI;
-    std::string cgi_path;
-    std::string cgi_ext;
-    std::string uploadpath;
+	public: 
+		std::string directory;
+		std::vector<std::string> methods;
+		bool auto_index;
+		bool hasCGI;
+		std::string cgi_path;
+		std::string cgi_ext;
+		std::string uploadpath;
 };
 
 class Server{
@@ -28,5 +29,6 @@ class Server{
 	public:
 		std::string findValue(const std::map<std::string, std::string>& myMap, const std::string& word);
 		size_t convertToBytes(const std::string& sizeInMB);
+		std::map<std::string, Routes> parseRoutes(const std::map<std::string, std::map<std::string, std::set<std::string> > >& routes);
 		Server(const ServerConfig& config);
 };
