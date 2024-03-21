@@ -252,9 +252,6 @@ std::map<std::string, std::string> ConfigParser::getServerConfig(int serverIndex
     return configData[serverIndex].serverConfig;
 }
 
-std::map<std::string, std::string> ConfigParser::getErrorPages(int serverIndex){
-    return configData[serverIndex].errorPages;
-}
 
 void ConfigParser::printConfigData() {
     std::cout << "Printing Config Data:" << std::endl;

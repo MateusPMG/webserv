@@ -5,7 +5,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/webserv",
-        "args": [],
+        "args": ["conf_files/test1.txt"],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
         "environment": [],

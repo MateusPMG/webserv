@@ -10,7 +10,7 @@ std::string Server::findValue(const std::map<std::string, std::string>& myMap, c
     return ""; //Return empty string if fail however previous parsing should prevent this 
 }
 
-size_t convertToBytes(const std::string& sizeInMB) {
+size_t Server::convertToBytes(const std::string& sizeInMB) {
     std::istringstream iss(sizeInMB);
     double size;
     if (!(iss >> size)) {
@@ -22,35 +22,46 @@ size_t convertToBytes(const std::string& sizeInMB) {
     return bytes;
 }
 
-std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, std::map<std::string, std::set<std::string> > >& routes) {
+std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, std::map<std::string, std::set<std::string> > >& inputRoutes) {
     std::map<std::string, Routes> parsedRoutes;
+
     std::map<std::string, std::map<std::string, std::set<std::string> > >::const_iterator it;
-    for (it = routes.begin(); it != routes.end(); ++it) {
+    for (it = inputRoutes.begin(); it != inputRoutes.end(); ++it) {
         Routes route;
+
         std::map<std::string, std::set<std::string> >::const_iterator innerIt;
+
         innerIt = it->second.find("directory");
         route.directory = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
+
         innerIt = it->second.find("auto_index");
         route.auto_index = (innerIt != it->second.end() && innerIt->second.size() > 0) ? (*(innerIt->second.begin()) == "on") : false;
+
         innerIt = it->second.find("methods");
         if (innerIt != it->second.end() && innerIt->second.size() > 0) {
             route.methods.assign(innerIt->second.begin(), innerIt->second.end());
         }
+
         innerIt = it->second.find("cgi");
         route.hasCGI = (innerIt != it->second.end() && innerIt->second.size() > 0);
         if (route.hasCGI) {
             innerIt = it->second.find("cgi_path");
             route.cgi_path = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
+
             innerIt = it->second.find("cgi");
             route.cgi_ext = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
         }
+
         innerIt = it->second.find("upload_dir");
         route.uploadpath = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
-        //Store 'route' object in 'parsedRoutes' map
+
+        // Store 'route' object in 'parsedRoutes' map
         parsedRoutes[it->first] = route;
     }
+
     return parsedRoutes;
 }
+
 
 
 Server::Server(const ServerConfig& config){
@@ -62,5 +73,5 @@ Server::Server(const ServerConfig& config){
 	error_page_path = findValue(config.serverConfig, "error_page");
 	client_body_size = convertToBytes(findValue(config.serverConfig, "client_body_size"));
 	routes = parseRoutes(config.routes);
-	
+
 }

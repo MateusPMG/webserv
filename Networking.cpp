@@ -4,6 +4,7 @@ Networking::Networking(const ConfigParser& parser){
     for (size_t i = 0; i < parser.configData.size(); ++i){
         this->servers.push_back(Server(parser.configData[i]));
     }
+	
 }
 
 Networking::~Networking(){}
@@ -24,7 +25,7 @@ int Networking::CreateBindSocket(int port){
 	std::memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(port);
-	serverAddress.sin_addr.s_addr = inet_addr(INADDR_ANY);
+	serverAddress.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, reinterpret_cast<struct sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){
 		std::cerr << "Error: Failed to bind socket to port " << port << std::endl;
 		close (serverSocket);
