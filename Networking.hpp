@@ -36,6 +36,8 @@ class Networking{
 		~Networking();
 		//starts servers by creating and binding sockets for each server and starts listening on each
 		void booting();
+		//create socket, bind it, store it in server object and listen on it
+		int bindcreatelisten(Server& server);
 		//this method will start the server and run it
 		//on a while(true) statement
 		void runServer();

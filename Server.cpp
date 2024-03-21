@@ -73,5 +73,16 @@ Server::Server(const ServerConfig& config){
 	error_page_path = findValue(config.serverConfig, "error_page");
 	client_body_size = convertToBytes(findValue(config.serverConfig, "client_body_size"));
 	routes = parseRoutes(config.routes);
+}
 
+void Server::setsocket(int fd){
+	this->server_socket_fd = fd;
+}
+
+int Server::getport(){
+	return (std::stoi(port));
+}
+
+int Server::getsocketfd(){
+	return (this->server_socket_fd);
 }

@@ -31,4 +31,7 @@ class Server{
 		size_t convertToBytes(const std::string& sizeInMB);
 		std::map<std::string, Routes> parseRoutes(const std::map<std::string, std::map<std::string, std::set<std::string> > >& routes);
 		Server(const ServerConfig& config);
+		void setsocket(int fd);
+		int getport();
+		int getsocketfd();
 };
