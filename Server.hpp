@@ -24,7 +24,7 @@ class Server{
 		std::string directory;
 		std::string error_page_path;
 		size_t client_body_size;
-		//int server_socket_fd;
+		int server_socket_fd;
 		std::map<std::string, Routes> routes;
 	public:
 		std::string findValue(const std::map<std::string, std::string>& myMap, const std::string& word);

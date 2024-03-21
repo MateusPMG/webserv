@@ -28,16 +28,14 @@
 #include <arpa/inet.h>
 class Networking{
 	private:
-		//this method creates sockets and binds them to a given port;
-		int CreateBindSocket(int port);
 		//this vector will store the servers and their configs;
 		std::vector<Server> servers;
-		//this method accepts incoming connections on the server sockets
-		//void acceptConnection();
 	public:
 		//constructor and destructor
 		Networking(const ConfigParser& parser);
 		~Networking();
+		//starts servers by creating and binding sockets for each server and starts listening on each
+		void booting();
 		//this method will start the server and run it
 		//on a while(true) statement
 		void runServer();
