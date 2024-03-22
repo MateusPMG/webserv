@@ -43,8 +43,8 @@ std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, st
         }
 
         innerIt = it->second.find("cgi");
-        route.hasCGI = (innerIt != it->second.end() && innerIt->second.size() > 0);
-        if (route.hasCGI) {
+        route.hascgi = (innerIt != it->second.end() && innerIt->second.size() > 0);
+        if (route.hascgi) {
             innerIt = it->second.find("cgi_path");
             route.cgi_path = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
 

@@ -49,3 +49,23 @@ int Networking::bindcreatelisten(Server& server) {
     server.setsocket(sockfd);
     return (0);
 }
+
+void Networking::runservers(){
+	//initialize poll_fds vector with the number of existing servers
+	for (size_t i = 0; i < servers.size(); i++) {
+		poll_fds.push_back(pollfd());
+	}
+	//fill pollfds vector with the required information
+	for (size_t i = 0; i < servers.size(); i++) {
+		poll_fds[i].fd = servers[i].getsocketfd();
+		//pollin will indicate we are interested in monitoring the fd for READ events
+		poll_fds[i].events = POLLIN;
+		//revents set to 0, the poll() function will change this indicating which event happened on the fd
+		poll_fds[i].revents = 0;
+	}
+	//MAIN LOOP, this loop is basically the webserv running
+	//handles events and monitors connections
+	while(true){
+
+	}
+}

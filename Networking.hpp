@@ -26,10 +26,13 @@
 //included for the inet_addr() function to set the IP adress of the server
 //it converts the ip adress from string to network byte order 
 #include <arpa/inet.h>
+//pollfds and poll function to monitor server and client sockets and allow multiple connections without blocking
+#include <poll.h>
 class Networking{
 	private:
 		//this vector will store the servers and their configs;
 		std::vector<Server> servers;
+		static std::vector<pollfd> poll_fds;
 	public:
 		//constructor and destructor
 		Networking(const ConfigParser& parser);
@@ -40,5 +43,5 @@ class Networking{
 		int bindcreatelisten(Server& server);
 		//this method will start the server and run it
 		//on a while(true) statement
-		void runServer();
+		void runservers();
 };

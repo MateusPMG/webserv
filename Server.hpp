@@ -9,7 +9,7 @@ class Routes{
 		std::string directory;
 		std::vector<std::string> methods;
 		bool auto_index;
-		bool hasCGI;
+		bool hascgi;
 		std::string cgi_path;
 		std::string cgi_ext;
 		std::string uploadpath;
