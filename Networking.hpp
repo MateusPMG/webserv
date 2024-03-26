@@ -3,6 +3,7 @@
 #include <string>
 #include "Server.hpp"
 #include "ConfigParser.hpp"
+#include "Client.hpp"
 
 //NETWORKING
 
@@ -32,6 +33,9 @@ class Networking{
 	private:
 		//this vector will store the servers and their configs;
 		std::vector<Server> servers;
+		//this vector will store the clients and their sockets etc;
+		std::vector<Client> clients;
+		//this vector will store the sockets fds for both servers and clients
 		static std::vector<pollfd> poll_fds;
 	public:
 		//constructor and destructor

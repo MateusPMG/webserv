@@ -66,6 +66,25 @@ void Networking::runservers(){
 	//MAIN LOOP, this loop is basically the webserv running
 	//handles events and monitors connections
 	while(true){
-
+		if (poll(poll_fds.data(), poll_fds.size(), 200) == -1){
+        	throw std::runtime_error("Error: poll failed");
+		}
+		for (size_t i = 0; i < poll_fds.size(); i++){
+			//check if pollin BIT was set in the revent variable, 
+			//if so it means theres is data available to be read on a socket
+			if (poll_fds.at(i).revents & POLLIN){
+				//we must first check if the current i corresponds to a server fd
+				//which means a new connection is ready to be accepted, otherwise its a client socket
+				//and theres data to be read from the client
+				if (i < servers.size() && poll_fds[i].fd == servers[i].getsocketfd()){
+					acceptNewConnection();
+					//accept new connection and then skip to the next iteration
+					continue;
+				}
+				//will read and store the request for future parsing
+				receiveRequest();
+				continue;
+			}	
+		}
 	}
 }
