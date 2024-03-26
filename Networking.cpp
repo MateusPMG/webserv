@@ -15,7 +15,6 @@ void Networking::booting(){
 		std::cout << "Server booted on port: " << (*it).getport() << std::endl;
 		std::cout << "Server socket: " << (*it).getsocketfd() << std::endl;
     }
-	
 }
 
 int Networking::bindcreatelisten(Server& server) {
@@ -50,6 +49,23 @@ int Networking::bindcreatelisten(Server& server) {
     return (0);
 }
 
+void Networking::acceptNewConnection(Server& server){
+	int socket = accept(server.getsocketfd(), NULL, NULL);
+	if (socket == -1)
+		throw (std::runtime_error("Error: accepting connection failed"));
+	fcntl(socket, F_SETFL, O_NONBLOCK);
+	clients.push_back(Client(server, socket));
+	struct pollfd pollst;
+	pollst.fd = socket;
+	pollst.events = POLLIN | POLLOUT;
+	pollst.revents = 0;
+	poll_fds.push_back(pollst);
+}
+
+void Networking::receiveRequest(){
+	
+}
+
 void Networking::runservers(){
 	//initialize poll_fds vector with the number of existing servers
 	for (size_t i = 0; i < servers.size(); i++) {
@@ -77,14 +93,14 @@ void Networking::runservers(){
 				//which means a new connection is ready to be accepted, otherwise its a client socket
 				//and theres data to be read from the client
 				if (i < servers.size() && poll_fds[i].fd == servers[i].getsocketfd()){
-					acceptNewConnection();
+					acceptNewConnection(servers[i]);
 					//accept new connection and then skip to the next iteration
 					continue;
 				}
 				//will read and store the request for future parsing
 				receiveRequest();
 				continue;
-			}	
+			}
 		}
 	}
 }

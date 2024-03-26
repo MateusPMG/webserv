@@ -29,6 +29,8 @@
 #include <arpa/inet.h>
 //pollfds and poll function to monitor server and client sockets and allow multiple connections without blocking
 #include <poll.h>
+//for use of the fcntl() function so we can set sockets to nonblock
+#include <fcntl.h>
 class Networking{
 	private:
 		//this vector will store the servers and their configs;
@@ -48,4 +50,8 @@ class Networking{
 		//this method will start the server and run it
 		//on a while(true) statement
 		void runservers();
+		//accepts new connections
+		void acceptNewConnection(Server& server);
+		//receive and store the request on the respective client for request parsing 
+		void receiveRequest();
 };
