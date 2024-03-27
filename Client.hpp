@@ -1,6 +1,8 @@
 #pragma once
 #include "Server.hpp"
 #include <ctime>
+#include <sys/socket.h>
+#include <sstream>
 class Client{
 	private:
 		Server target_server;
@@ -18,4 +20,5 @@ class Client{
 		void settarget(Server& target);
 		std::string getrequest();
 		Server& gettarget();
+		void sendErrorResponse(const std::string& error);
 };

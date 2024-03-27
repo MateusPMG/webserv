@@ -58,7 +58,6 @@ std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, st
         // Store 'route' object in 'parsedRoutes' map
         parsedRoutes[it->first] = route;
     }
-
     return parsedRoutes;
 }
 
