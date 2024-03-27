@@ -15,6 +15,7 @@ void Networking::booting(){
 		std::cout << "Server booted on port: " << (*it).getport() << std::endl;
 		std::cout << "Server socket: " << (*it).getsocketfd() << std::endl;
     }
+	this->numservers = servers.size();
 }
 
 int Networking::bindcreatelisten(Server& server) {
@@ -62,8 +63,22 @@ void Networking::acceptNewConnection(Server& server){
 	poll_fds.push_back(pollst);
 }
 
-void Networking::receiveRequest(){
-	
+void Networking::closeConnection(int pollindex, int clientindex){
+	close(poll_fds[pollindex].fd);
+	poll_fds.erase(poll_fds.begin() + pollindex);
+	clients.erase(clients.begin() + clientindex);
+	std::cout << "Connection closed" << std::endl;
+}
+
+void Networking::receiveRequest(int clientindex, int fd, int pollindex){
+	char buff[4096] = {0};
+	int read_byte_n;
+	//when recv returns 0 it means the connection has been closed on the client end so we close as well
+	if ((read_byte_n = recv(fd, buff, 4096, 0)) > 0){
+		clients[clientindex].addRequest(buff, read_byte_n);
+	}
+	else
+		closeConnection(pollindex, clientindex);
 }
 
 void Networking::runservers(){
@@ -86,9 +101,10 @@ void Networking::runservers(){
         	throw std::runtime_error("Error: poll failed");
 		}
 		for (size_t i = 0; i < poll_fds.size(); i++){
+			int clientindex = i - numservers;
 			//check if pollin BIT was set in the revent variable, 
 			//if so it means theres is data available to be read on a socket
-			if (poll_fds.at(i).revents & POLLIN){
+			if (poll_fds[i].revents & POLLIN){
 				//we must first check if the current i corresponds to a server fd
 				//which means a new connection is ready to be accepted, otherwise its a client socket
 				//and theres data to be read from the client
@@ -97,9 +113,19 @@ void Networking::runservers(){
 					//accept new connection and then skip to the next iteration
 					continue;
 				}
-				//will read and store the request for future parsing
-				receiveRequest();
+				//will read and store the request for future parsing and if not closes connection
+				receiveRequest(clientindex, poll_fds[i].fd, i);
 				continue;
+			}
+			//if any error with fds or the connection is closed on client end we close the connection
+			if (poll_fds[i].revents & (POLLERR | POLLHUP | POLLNVAL | POLLRDHUP)){
+				closeConnection(i, clientindex);
+			}
+			//due to not using else if conditions we must stop server sockets from being further processed
+			if (poll_fds[i].fd <= servers[numservers - 1].getsocketfd())
+				continue;
+			if (poll_fds[i].revents & POLLOUT){
+				
 			}
 		}
 	}

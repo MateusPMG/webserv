@@ -39,6 +39,8 @@ class Networking{
 		std::vector<Client> clients;
 		//this vector will store the sockets fds for both servers and clients
 		static std::vector<pollfd> poll_fds;
+		//this will store the number of servers;
+		int numservers;
 	public:
 		//constructor and destructor
 		Networking(const ConfigParser& parser);
@@ -53,5 +55,7 @@ class Networking{
 		//accepts new connections
 		void acceptNewConnection(Server& server);
 		//receive and store the request on the respective client for request parsing 
-		void receiveRequest();
+		void receiveRequest(int clientindex, int fd, int pollindex);
+		//close a connection
+		void closeConnection(int pollindex, int clientindex);
 };
