@@ -82,7 +82,23 @@ void Networking::receiveRequest(int clientindex, int fd, int pollindex){
 }
 
 Server& Networking::checktarget(const std::string& buff, Server& defaultserv){
-	
+    size_t hostPos = buff.find("Host:");
+	std::string servname;
+    //If Host header is found
+    if (hostPos != std::string::npos) {
+        //Extract the host information using stringstream
+        std::istringstream iss(buff.substr(hostPos));
+        std::string hostLine;
+        std::getline(iss, hostLine);
+        size_t hostStartPos = hostLine.find(":") + 2; //Move past the ": "
+        servname = hostLine.substr(hostStartPos);
+	}
+	//check for host name and server name
+	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it){
+		if (servname == it->getservername() && it->gethost() == defaultserv.gethost())
+			return (*it);
+	}
+	return (defaultserv);
 }
 
 void Networking::runservers(){
@@ -141,7 +157,7 @@ void Networking::runservers(){
 					continue;
 				//if we reach this point we parse and handle the request to build a response
 				//but first we must check if the request sent is for the server who accepted the connection or another server
-				clients[clientindex].settarget(checktarget());
+				clients[clientindex].settarget(checktarget(clients[clientindex].getrequest(), clients[clientindex].gettarget()));
 				clients[clientindex].handleRequest();
 			}
 		}

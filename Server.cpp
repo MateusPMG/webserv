@@ -84,5 +84,12 @@ int Server::getport(){
 }
 
 int Server::getsocketfd(){
-	return (this->server_socket_fd);
+	return (server_socket_fd);
+}
+
+const std::string& Server::gethost(){
+	return (host);
+}
+const std::string& Server::getservername(){
+	return (server_name);
 }

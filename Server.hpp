@@ -34,4 +34,6 @@ class Server{
 		void setsocket(int fd);
 		int getport();
 		int getsocketfd();
+		const std::string& getservername();
+		const std::string& gethost();
 };
