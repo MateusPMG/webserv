@@ -81,6 +81,10 @@ void Networking::receiveRequest(int clientindex, int fd, int pollindex){
 		closeConnection(pollindex, clientindex);
 }
 
+Server& Networking::checktarget(const std::string& buff, Server& defaultserv){
+	
+}
+
 void Networking::runservers(){
 	//initialize poll_fds vector with the number of existing servers
 	for (size_t i = 0; i < servers.size(); i++) {
@@ -127,13 +131,18 @@ void Networking::runservers(){
 			//check if the socket is ready to write into and if client object is ready to send the response
 			if (poll_fds[i].revents & POLLOUT){
 				 //need to check if client timed out, if true we close connection
-				if ()
+				if (clients[clientindex].timeout()){
 					closeConnection(i, clientindex);
+					continue;
+				}
 				//check if we appended the last request chunk if not
 				//it means the client object hasnt received the whole request yet and we continue
-				if ()
+				if (!clients[clientindex].requestready())
 					continue;
-				
+				//if we reach this point we parse and handle the request to build a response
+				//but first we must check if the request sent is for the server who accepted the connection or another server
+				clients[clientindex].settarget(checktarget());
+				clients[clientindex].handleRequest();
 			}
 		}
 	}

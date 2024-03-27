@@ -41,21 +41,24 @@ class Networking{
 		static std::vector<pollfd> poll_fds;
 		//this will store the number of servers;
 		int numservers;
-	public:
-		//constructor and destructor
-		Networking(const ConfigParser& parser);
-		~Networking();
-		//starts servers by creating and binding sockets for each server and starts listening on each
-		void booting();
 		//create socket, bind it, store it in server object and listen on it
 		int bindcreatelisten(Server& server);
-		//this method will start the server and run it
-		//on a while(true) statement
-		void runservers();
 		//accepts new connections
 		void acceptNewConnection(Server& server);
 		//receive and store the request on the respective client for request parsing 
 		void receiveRequest(int clientindex, int fd, int pollindex);
 		//close a connection
 		void closeConnection(int pollindex, int clientindex);
+		//checks if request asks for the connection server or another
+		Server& checktarget(const std::string& buff, Server& defaultserv);
+	public:
+		//constructor and destructor
+		Networking(const ConfigParser& parser);
+		~Networking();
+		//boots servers by creating and binding sockets for each server and starts listening on each
+		void booting();
+		//this method will start the webserver and run it
+		//on a while(true) statement
+		void runservers();
+		
 };

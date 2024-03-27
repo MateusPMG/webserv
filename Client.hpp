@@ -14,4 +14,8 @@ class Client{
 		void addRequest(const char* buff, int bufflen);
 		bool timeout();
 		bool requestready();
+		void handleRequest();
+		void settarget(Server& target);
+		std::string getrequest();
+		Server& gettarget();
 };

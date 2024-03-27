@@ -6,6 +6,14 @@ int Client::getsocketfd(){
 	return (client_socket_fd);
 }
 
+Server& Client::gettarget(){
+	return (target_server);
+}
+
+std::string Client::getrequest(){
+	return (request);
+}
+
 void Client::addRequest(const char* buff, int bufflen){
 	this->previous_request_time = std::time(NULL);
 	this->sent = false;
@@ -21,4 +29,22 @@ bool Client::requestready(){
 	//if the request hasnt been sent AND the delimiter has been found 
 	//the request string is ready to be handled
 	return !(sent || request.find("\r\n\r\n") == std::string::npos);
+}
+
+void Client::settarget(Server& target){
+	target_server = target;
+}
+
+void Client::handleRequest(){
+	sent = true;
+	previous_request_time = std::time(NULL);
+	try
+	{
+		parseRequest();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+	
 }
