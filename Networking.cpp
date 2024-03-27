@@ -124,7 +124,15 @@ void Networking::runservers(){
 			//due to not using else if conditions we must stop server sockets from being further processed
 			if (poll_fds[i].fd <= servers[numservers - 1].getsocketfd())
 				continue;
+			//check if the socket is ready to write into and if client object is ready to send the response
 			if (poll_fds[i].revents & POLLOUT){
+				 //need to check if client timed out, if true we close connection
+				if ()
+					closeConnection(i, clientindex);
+				//check if we appended the last request chunk if not
+				//it means the client object hasnt received the whole request yet and we continue
+				if ()
+					continue;
 				
 			}
 		}

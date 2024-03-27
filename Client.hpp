@@ -12,4 +12,6 @@ class Client{
 		Client(Server target, int clientfd);
 		int getsocketfd();
 		void addRequest(const char* buff, int bufflen);
+		bool timeout();
+		bool requestready();
 };
