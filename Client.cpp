@@ -72,12 +72,16 @@ void Client::parseRequest(){
 	if (!(method == "GET" || method == "POST" || method == "DELETE")){
 		throw std::runtime_error("501 Not Implemented");
 	}
-	if (httpversion != "HTTP/1.1"){
+	if (httpversion == "HTTP/1.0"){
 		throw std::runtime_error("505 HTTP Version Not Supported");
 	}
-	if (URI.empty() || URI[0] == "/"){
+	if (httpversion != "HTTP/1.1"){
 		throw std::runtime_error("400 Bad Request");
 	}
+	if (URI.empty() || URI[0] != '/' || URI.find("../") != std::string::npos){
+		throw std::runtime_error("400 Bad Request");
+	}
+
 }
 
 void Client::handleRequest(){
