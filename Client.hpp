@@ -21,4 +21,5 @@ class Client{
 		std::string getrequest();
 		Server& gettarget();
 		void sendErrorResponse(const std::string& error);
+		void parseRequest();
 };

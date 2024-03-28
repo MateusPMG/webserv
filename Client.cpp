@@ -57,6 +57,29 @@ void Client::sendErrorResponse(const std::string& error){
 	send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0);
 }
 
+void Client::parseRequest(){
+	std::ifstream requeststream(request);
+	std::string line;
+	std::getline(requeststream, line);
+	std::stringstream linestream(line);
+	std::string method;
+	std::string URI;
+	std::string httpversion;
+	linestream >> method >> URI >> httpversion;
+	if (method.empty() || URI.empty() || httpversion.empty()){
+		throw std::runtime_error("400 Bad Request");
+	}
+	if (!(method == "GET" || method == "POST" || method == "DELETE")){
+		throw std::runtime_error("501 Not Implemented");
+	}
+	if (httpversion != "HTTP/1.1"){
+		throw std::runtime_error("505 HTTP Version Not Supported");
+	}
+	if (URI.empty() || URI[0] == "/"){
+		throw std::runtime_error("400 Bad Request");
+	}
+}
+
 void Client::handleRequest(){
 	sent = true;
 	previous_request_time = std::time(NULL);
