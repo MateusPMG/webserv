@@ -10,6 +10,10 @@ class Client{
 		time_t	previous_request_time;
 		std::string request;
 		bool sent;
+		size_t request_body_size;
+		std::string requestmethod;
+		std::string requestURI;
+		std::string requestbody;
 	public:
 		Client(Server target, int clientfd);
 		int getsocketfd();
@@ -22,4 +26,5 @@ class Client{
 		Server& gettarget();
 		void sendErrorResponse(const std::string& error);
 		void parseRequest();
+		std::map<std::string, std::string> requestheaders;
 };

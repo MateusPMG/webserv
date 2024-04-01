@@ -21,7 +21,7 @@ void Client::addRequest(const char* buff, int bufflen){
 }
 
 bool Client::timeout(){
-	//90 seconds for a time out randomly chosen
+	//90 seconds for a time out, randomly chosen
 	return (std::time(NULL) - previous_request_time > 90);
 }
 
@@ -72,6 +72,7 @@ void Client::parseRequest(){
 	if (!(method == "GET" || method == "POST" || method == "DELETE")){
 		throw std::runtime_error("501 Not Implemented");
 	}
+	requestmethod = method;
 	if (httpversion == "HTTP/1.0"){
 		throw std::runtime_error("505 HTTP Version Not Supported");
 	}
@@ -81,7 +82,51 @@ void Client::parseRequest(){
 	if (URI.empty() || URI[0] != '/' || URI.find("../") != std::string::npos){
 		throw std::runtime_error("400 Bad Request");
 	}
-
+	requestURI = URI;
+	//the "\r" signals the end of the headers and the start of the body of the request/chunk
+	//here we store the headers
+	while (std::getline(requeststream, line) && line != "\r"){
+		std::stringstream linestream(line);
+		std::string headerName;
+		std::string headerValue;
+		std::getline(linestream, headerName, ':');
+		std::getline(linestream, headerValue);
+		std::size_t first = headerValue.find_first_not_of(' ');
+		if (first != std::string::npos)
+			headerValue.erase(0, first);
+		std::size_t last = headerValue.find_last_not_of(' ');
+		if (last != std::string::npos)
+			headerValue.erase(last + 1);
+		if (headerValue.empty()){
+			throw std::runtime_error("400 Bad Request");
+		}
+		requestheaders[headerName] = headerValue;
+	}
+	//generally GET and DELETE methods dont have a body in their request
+	if (method == "GET" || method == "DELETE")
+		return;
+	//lets check body size
+	std::map<std::string, std::string>::iterator it = requestheaders.find("Content-length");
+	if (it != requestheaders.end()) {
+		std::istringstream iss(it->second);
+		if (!(iss >> request_body_size)) {
+			throw std::runtime_error("400 Bad Request");
+		}
+	} else {
+		throw std::runtime_error("400 Bad Request");
+	}
+	if (request_body_size > target_server.getclientbodysize()){
+		throw std::runtime_error("413 Payload Too Large");
+	}
+	//skip over blank line after headers
+	std::getline(requeststream, line);
+	//since there might be images or executables sent we dont want to corrupt them
+	//thus we dont want to interpret any character in the request body by reading it as text
+	//we just want to store it so we will be treating it as binary so no char will be interpreted
+	//Resize requestBody to request_body_size
+	requestbody.resize(request_body_size);
+	//Read data from requeststream into requestbody
+	requeststream.read(&requestbody[0], request_body_size);
 }
 
 void Client::handleRequest(){

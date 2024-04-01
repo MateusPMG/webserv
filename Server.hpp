@@ -36,4 +36,5 @@ class Server{
 		int getsocketfd();
 		const std::string& getservername();
 		const std::string& gethost();
+		size_t getclientbodysize();
 };

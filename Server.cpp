@@ -92,3 +92,7 @@ const std::string& Server::gethost(){
 const std::string& Server::getservername(){
 	return (server_name);
 }
+
+size_t Server::getclientbodysize(){
+	return (client_body_size);
+}
