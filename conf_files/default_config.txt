@@ -7,7 +7,7 @@ server {
     error_page 404.html;
 	directory var/www;
     routes {
-        route / {
+        route /all {
             methods GET POST DELETE;
             directory var/www/html;
             cgi .py;
@@ -18,5 +18,8 @@ server {
             methods POST;
             upload_dir var/www/uploads;
         }
+		route /redir {
+			return /all
+		}
     }
 }

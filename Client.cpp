@@ -129,12 +129,19 @@ void Client::parseRequest(){
 	requeststream.read(&requestbody[0], request_body_size);
 }
 
+void Client::parseRoute(int exit){
+	if (exit >= 10)
+		throw std::runtime_error("508 Loop Detected");
+	
+}
+
 void Client::handleRequest(){
 	sent = true;
 	previous_request_time = std::time(NULL);
 	try
 	{
 		parseRequest();
+		parseRoute(0);
 	}
 	catch(const std::exception& e)
 	{

@@ -27,4 +27,5 @@ class Client{
 		void sendErrorResponse(const std::string& error);
 		void parseRequest();
 		std::map<std::string, std::string> requestheaders;
+		void parseRoute(int exit);
 };
