@@ -135,8 +135,6 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
-		if(route->first == "/" && requestURI != "/")
-			continue;
 		//if the route found is not part of a longer path in the URI and the URI
 		//doesnt end with an exact match of route then its not this route
 		if (requestURI.find(route->first + '/') == std::string::npos
