@@ -13,6 +13,7 @@ class Routes{
 		std::string cgi_path;
 		std::string cgi_ext;
 		std::string uploadpath;
+		std::string redirection;
 };
 
 class Server{
@@ -37,4 +38,5 @@ class Server{
 		const std::string& getservername();
 		const std::string& gethost();
 		size_t getclientbodysize();
+		const std::map<std::string, Routes>& getroutes();
 };

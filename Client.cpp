@@ -132,7 +132,24 @@ void Client::parseRequest(){
 void Client::parseRoute(int exit){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
-	
+	size_t pos;
+	std::map<std::string, Routes>::const_iterator route;
+	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
+		if(route->first == "/" && requestURI != "/")
+			continue;
+		//if the route found is not part of a longer path in the URI and the URI
+		//doesnt end with an exact match of route then its not this route
+		if (requestURI.find(route->first + '/') == std::string::npos
+		&& (requestURI.length() < route->first.length()
+		|| requestURI.compare(requestURI.length() - route->first.length(), route->first.length(), route->first) != 0))
+    		continue;
+		//route position in the uri string
+		pos = requestURI.find(route->first);
+		//check for methods
+		if (!route->second.methods.empty() && 
+    	std::find(route->second.methods.begin(), route->second.methods.end(), requestmethod) == route->second.methods.end())
+			throw std::runtime_error("405 Method Not Allowed");
+	}
 }
 
 void Client::handleRequest(){

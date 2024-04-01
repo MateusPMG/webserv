@@ -55,7 +55,10 @@ std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, st
         innerIt = it->second.find("upload_dir");
         route.uploadpath = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
 
-        // Store 'route' object in 'parsedRoutes' map
+		innerIt = it->second.find("return");
+        route.redirection = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
+        
+		//Store 'route' object in 'parsedRoutes' map
         parsedRoutes[it->first] = route;
     }
     return parsedRoutes;
@@ -95,4 +98,8 @@ const std::string& Server::getservername(){
 
 size_t Server::getclientbodysize(){
 	return (client_body_size);
+}
+
+const std::map<std::string, Routes>& Server::getroutes(){
+	return (routes);
 }

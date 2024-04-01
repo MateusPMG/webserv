@@ -2,6 +2,7 @@
 #include "Server.hpp"
 #include <ctime>
 #include <sys/socket.h>
+#include <algorithm>
 #include <sstream>
 class Client{
 	private:
