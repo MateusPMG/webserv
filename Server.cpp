@@ -103,3 +103,7 @@ size_t Server::getclientbodysize(){
 const std::map<std::string, Routes>& Server::getroutes(){
 	return (routes);
 }
+
+const std::string& Server::getdirectory(){
+	return (directory);
+}

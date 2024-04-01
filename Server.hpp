@@ -39,4 +39,5 @@ class Server{
 		const std::string& gethost();
 		size_t getclientbodysize();
 		const std::map<std::string, Routes>& getroutes();
+		const std::string& getdirectory(); 
 };

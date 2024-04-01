@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <algorithm>
 #include <sstream>
+#include <sys/stat.h>
 class Client{
 	private:
 		Server target_server;
@@ -28,5 +29,5 @@ class Client{
 		void sendErrorResponse(const std::string& error);
 		void parseRequest();
 		std::map<std::string, std::string> requestheaders;
-		void parseRoute(int exit);
+		void parseRoute(int exit, std::string requestdirectory);
 };

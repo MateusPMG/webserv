@@ -102,7 +102,7 @@ void Client::parseRequest(){
 		}
 		requestheaders[headerName] = headerValue;
 	}
-	//generally GET and DELETE methods dont have a body in their request
+	//generally GET and DELETE methods dont have a body in their request so we skip the rest
 	if (method == "GET" || method == "DELETE")
 		return;
 	//lets check body size
@@ -129,7 +129,7 @@ void Client::parseRequest(){
 	requeststream.read(&requestbody[0], request_body_size);
 }
 
-void Client::parseRoute(int exit){
+void Client::parseRoute(int exit, std::string requestdirectory){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
 	size_t pos;
@@ -145,10 +145,27 @@ void Client::parseRoute(int exit){
     		continue;
 		//route position in the uri string
 		pos = requestURI.find(route->first);
-		//check for methods
+		//check if the route supports the requested method
 		if (!route->second.methods.empty() && 
     	std::find(route->second.methods.begin(), route->second.methods.end(), requestmethod) == route->second.methods.end())
 			throw std::runtime_error("405 Method Not Allowed");
+		//if theres a redirection simply process the request in the route its redirected to
+		if (route->second.redirection.size()){
+			requestURI.erase(pos, route->first.size()).insert(pos, route->second.redirection);
+			parseRoute(exit + 1, requestdirectory);
+			return;
+		}
+		//prepare URI for further handling since we already established the correct route
+		if (route->second.directory.size()){
+			requestURI.erase(pos, route->first.size());
+			requestdirectory = route->second.directory;
+		}
+		//we check if the directory + uri constitutes a valid existing directory
+		//example: /var/www + /html = /var/www/html
+		struct stat st;
+		if (stat((requestdirectory + requestURI).c_str(), &st) == 0 && S_ISDIR(st.st_mode)){
+			if ()
+		}
 	}
 }
 
@@ -158,7 +175,8 @@ void Client::handleRequest(){
 	try
 	{
 		parseRequest();
-		parseRoute(0);
+		std::string dir = target_server.getdirectory();
+		parseRoute(0, dir);
 	}
 	catch(const std::exception& e)
 	{
