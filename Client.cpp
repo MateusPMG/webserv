@@ -58,7 +58,7 @@ void Client::sendErrorResponse(const std::string& error){
 }
 
 void Client::parseRequest(){
-	std::ifstream requeststream(request);
+	std::ifstream requeststream(request.c_str());
 	std::string line;
 	std::getline(requeststream, line);
 	std::stringstream linestream(line);
@@ -86,11 +86,11 @@ void Client::parseRequest(){
 	//the "\r" signals the end of the headers and the start of the body of the request/chunk
 	//here we store the headers
 	while (std::getline(requeststream, line) && line != "\r"){
-		std::stringstream linestream(line);
+		std::stringstream linestream1(line);
 		std::string headerName;
 		std::string headerValue;
-		std::getline(linestream, headerName, ':');
-		std::getline(linestream, headerValue);
+		std::getline(linestream1, headerName, ':');
+		std::getline(linestream1, headerValue);
 		std::size_t first = headerValue.find_first_not_of(' ');
 		if (first != std::string::npos)
 			headerValue.erase(0, first);
@@ -125,7 +125,7 @@ void Client::parseRequest(){
 	//we just want to store it so we will be treating it as binary so no char will be interpreted
 	//Resize requestBody to request_body_size
 	requestbody.resize(request_body_size);
-	//Read data from requeststream into requestbody
+	//Read data from requeststream directly into requestbody without any interpretation
 	requeststream.read(&requestbody[0], request_body_size);
 }
 

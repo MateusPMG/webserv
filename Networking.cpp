@@ -1,5 +1,7 @@
 #include "Networking.hpp"
 
+std::vector<pollfd> Networking::poll_fds;
+
 Networking::Networking(const ConfigParser& parser){
     for (size_t i = 0; i < parser.configData.size(); ++i){
         this->servers.push_back(Server(parser.configData[i]));
