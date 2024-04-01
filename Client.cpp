@@ -158,6 +158,9 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 			requestURI.erase(pos, route->first.size());
 			requestdirectory = route->second.directory;
 		}
+
+		//perhaps i should check if resource in general exists
+
 		//we check if the directory + uri constitutes a valid existing directory
 		//example: /var/www + /html = /var/www/html
 		struct stat st;
