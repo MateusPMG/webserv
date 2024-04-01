@@ -164,7 +164,9 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 		//example: /var/www + /html = /var/www/html
 		struct stat st;
 		if (stat((requestdirectory + requestURI).c_str(), &st) == 0 && S_ISDIR(st.st_mode)){
-			if ()
+			//here we must check the method requested
+		    //and call the appropriate method handler
+			//gethandler(),posthandler(),deletehandler()
 		}
 	}
 }
