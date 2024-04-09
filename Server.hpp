@@ -14,6 +14,7 @@ class Routes{
 		std::string cgi_ext;
 		std::string uploadpath;
 		std::string redirection;
+		std::string tryfile;
 };
 
 class Server{
@@ -40,4 +41,5 @@ class Server{
 		size_t getclientbodysize();
 		const std::map<std::string, Routes>& getroutes();
 		const std::string& getdirectory(); 
+		const std::string& getindex();
 };

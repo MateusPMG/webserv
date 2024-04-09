@@ -37,11 +37,9 @@ void Client::settarget(Server& target){
 
 void Client::sendErrorResponse(const std::string& error){
 	std::stringstream response;
-    //Extracting error code and reason from the input string
     size_t spacePos = error.find(' ');
     std::string errorCode = error.substr(0, spacePos);
     std::string errorReason = error.substr(spacePos + 1);
-    //Constructing the HTML response
     response << "HTTP/1.1 " << errorCode << " " << errorReason << "\r\n";
     response << "Content-Type: text/html\r\n\r\n";
     response << "<!DOCTYPE html>\r\n";
@@ -51,8 +49,7 @@ void Client::sendErrorResponse(const std::string& error){
     response << "<h1>" << errorCode << " " << errorReason << "</h1>\r\n";
     response << "<p>" << errorReason << "</p>\r\n";
     response << "</body>\r\n";
-    response << "</html>\r\n";
-	//sending html error response to the client 
+    response << "</html>\r\n"; 
 	std::string responseStr = response.str();
 	send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0);
 }
@@ -129,13 +126,36 @@ void Client::parseRequest(){
 	requeststream.read(&requestbody[0], request_body_size);
 }
 
+void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route) {
+	std::string path = rqdir + rquri;
+	if(route == "/cgi-bin")
+	{
+		if (!rquri.empty() || rquri == "/") {
+			throw std::runtime_error("401 Unauthorized");
+		}
+		//cgi handler
+	}
+	if (access(path.c_str(), F_OK) == 0)
+		throw std::runtime_error("404 Not Found");
+	//remove trailing slash "/" if it exists
+	if (path != "./" && path[path.length() - 1] == '/') {
+		path = path.substr(0, path.length() - 1);
+	}
+	
+}
+
+void Client::sendget(std::string rquri){
+   
+}
+
 void Client::parseRoute(int exit, std::string requestdirectory){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
-		//if the route found is not part of a longer path in the URI and the URI
+		if (route->first == "/" && requestURI != "/") continue;
+		//if the route in the iterator is not part of a longer path in the URI and the URI
 		//doesnt end with an exact match of route then its not this route
 		if (requestURI.find(route->first + '/') == std::string::npos
 		&& (requestURI.length() < route->first.length()
@@ -158,19 +178,31 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 			requestURI.erase(pos, route->first.size());
 			requestdirectory = route->second.directory;
 		}
-
-		//perhaps i should check if resource in general exists
-
-		//we check if the directory + uri constitutes a valid existing directory
-		//example: /var/www + /html = /var/www/html
-		struct stat st;
-		if (stat((requestdirectory + requestURI).c_str(), &st) == 0 && S_ISDIR(st.st_mode)){
-			//here we must check the method requested
-		    //and call the appropriate method handler
-			//gethandler(),posthandler(),deletehandler()
+		if (requestbody.length() > request_body_size)
+			throw std::runtime_error("413 Payload Too Large");
+		if (requestmethod.size()){
+			if (requestmethod == "GET")
+				handleget(requestdirectory, requestURI, route->second, route->first);
+			else if (requestmethod == "POST")
+				handlepost();
+			else if (requestmethod == "DELETE")
+				handledelete();
 		}
 	}
+	throw std::runtime_error("404 Not Found");
 }
+
+
+
+/* void Client::handleresponse(std::string rqdir, std::string rquri, const Routes& location){
+	 if (requestmethod == "GET") {
+        handleget(rqdir, rquri, location);
+    } else if (requestmethod == "POST") {
+        handlepost(rqdir, rquri, location);
+    } else if (requestmethod == "DELETE") {
+        handledelete(rqdir, rquri);
+    }
+} */
 
 void Client::handleRequest(){
 	sent = true;

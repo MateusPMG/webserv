@@ -58,6 +58,9 @@ std::map<std::string, Routes> Server::parseRoutes(const std::map<std::string, st
 		innerIt = it->second.find("return");
         route.redirection = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
         
+		innerIt = it->second.find("tryfile");
+        route.tryfile = (innerIt != it->second.end() && innerIt->second.size() > 0) ? *(innerIt->second.begin()) : "";
+
 		//Store 'route' object in 'parsedRoutes' map
         parsedRoutes[it->first] = route;
     }
@@ -106,4 +109,8 @@ const std::map<std::string, Routes>& Server::getroutes(){
 
 const std::string& Server::getdirectory(){
 	return (directory);
+}
+
+const std::string& Server::getindex(){
+	return (index);
 }

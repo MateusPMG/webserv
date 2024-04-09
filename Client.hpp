@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <sstream>
 #include <sys/stat.h>
+#include <unistd.h> 
+
 class Client{
 	private:
 		Server target_server;
@@ -30,4 +32,7 @@ class Client{
 		void parseRequest();
 		std::map<std::string, std::string> requestheaders;
 		void parseRoute(int exit, std::string requestdirectory);
+		void handleresponse(std::string rqdir, std::string rquri, const Routes& location);
+		void handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
+		void sendget(std::string rquri);
 };
