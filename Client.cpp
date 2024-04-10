@@ -35,6 +35,21 @@ void Client::settarget(Server& target){
 	target_server = target;
 }
 
+bool Client::resourceexists(const std::string& rpath){
+	return (access(rpath.c_str(), F_OK) == 0);
+}
+
+bool Client::isdirectory(const std::string& dpath){
+	struct stat s;
+
+	if (stat(dpath.c_str(), &s) == 0) {
+		if (s.st_mode & S_IFDIR) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void Client::sendErrorResponse(const std::string& error){
 	std::stringstream response;
     size_t spacePos = error.find(' ');
@@ -128,6 +143,7 @@ void Client::parseRequest(){
 
 void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route) {
 	std::string path = rqdir + rquri;
+	std::string trypath = rqdir + location.tryfile;
 	if(route == "/cgi-bin")
 	{
 		if (!rquri.empty() || rquri == "/") {
@@ -141,7 +157,24 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 	if (path != "./" && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
 	}
-	
+	//check if its a directory
+	if (isdirectory(path)){
+		if (!location.tryfile.empty() && path == rqdir
+		&& resourceexists(trypath) && !isdirectory(trypath)){
+			handletryfile(trypath);
+			return;
+		}
+		if (!location.auto_index){
+			throw std::runtime_error("403 Forbidden");
+		}
+		else {
+			handledirlist();
+			return;
+		}
+	}
+	else{
+		handletryfile();
+	}
 }
 
 void Client::sendget(std::string rquri){
@@ -181,28 +214,22 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 		if (requestbody.length() > request_body_size)
 			throw std::runtime_error("413 Payload Too Large");
 		if (requestmethod.size()){
-			if (requestmethod == "GET")
+			if (requestmethod == "GET"){
 				handleget(requestdirectory, requestURI, route->second, route->first);
-			else if (requestmethod == "POST")
+				return;
+			}
+			else if (requestmethod == "POST"){
 				handlepost();
-			else if (requestmethod == "DELETE")
+				return;
+			}
+			else if (requestmethod == "DELETE"){
 				handledelete();
+				return;
+			}
 		}
 	}
 	throw std::runtime_error("404 Not Found");
 }
-
-
-
-/* void Client::handleresponse(std::string rqdir, std::string rquri, const Routes& location){
-	 if (requestmethod == "GET") {
-        handleget(rqdir, rquri, location);
-    } else if (requestmethod == "POST") {
-        handlepost(rqdir, rquri, location);
-    } else if (requestmethod == "DELETE") {
-        handledelete(rqdir, rquri);
-    }
-} */
 
 void Client::handleRequest(){
 	sent = true;

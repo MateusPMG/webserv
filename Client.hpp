@@ -35,4 +35,6 @@ class Client{
 		void handleresponse(std::string rqdir, std::string rquri, const Routes& location);
 		void handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		void sendget(std::string rquri);
+		bool resourceexists(const std::string& rpath);
+		bool isdirectory(const std::string& dpath);
 };
