@@ -11,7 +11,7 @@ int main(int ac, char **av){
 			ConfigParser parse(configPath);
 			Networking net(parse);
 			net.booting();
-			//parse.printConfigData();
+			net.runservers();
 		}
 		catch(const std::exception& e)
 		{

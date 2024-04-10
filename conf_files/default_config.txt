@@ -7,6 +7,9 @@ server {
     error_page 404.html;
 	directory var/www;
     routes {
+        route / {
+            
+        }
         route /all {
             methods GET POST DELETE;
             directory var/www/html;

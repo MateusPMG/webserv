@@ -70,16 +70,20 @@ void Client::sendErrorResponse(const std::string& error){
 }
 
 void Client::parseRequest(){
-	std::ifstream requeststream(request.c_str());
+	std::cout << request << std::endl;
+	std::stringstream requeststream(request.c_str());
 	std::string line;
 	std::getline(requeststream, line);
+	std::cout << line << std::endl;
 	std::stringstream linestream(line);
 	std::string method;
 	std::string URI;
 	std::string httpversion;
 	linestream >> method >> URI >> httpversion;
+	std::cout << method << "m" << URI << "m" << httpversion << std::endl;
+	std::cout << "oi" << std::endl;
 	if (method.empty() || URI.empty() || httpversion.empty()){
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400 Bad Request1");
 	}
 	if (!(method == "GET" || method == "POST" || method == "DELETE")){
 		throw std::runtime_error("501 Not Implemented");
@@ -89,10 +93,10 @@ void Client::parseRequest(){
 		throw std::runtime_error("505 HTTP Version Not Supported");
 	}
 	if (httpversion != "HTTP/1.1"){
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400 Bad Request2");
 	}
 	if (URI.empty() || URI[0] != '/' || URI.find("../") != std::string::npos){
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400 Bad Request3");
 	}
 	requestURI = URI;
 	//the "\r" signals the end of the headers and the start of the body of the request/chunk
@@ -122,10 +126,10 @@ void Client::parseRequest(){
 	if (it != requestheaders.end()) {
 		std::istringstream iss(it->second);
 		if (!(iss >> request_body_size)) {
-			throw std::runtime_error("400 Bad Request");
+			throw std::runtime_error("400 Bad Request4");
 		}
 	} else {
-		throw std::runtime_error("400 Bad Request");
+		throw std::runtime_error("400 Bad Request5");
 	}
 	if (request_body_size > target_server.getclientbodysize()){
 		throw std::runtime_error("413 Payload Too Large");
@@ -152,7 +156,7 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		//cgi handler
 	}
 	if (access(path.c_str(), F_OK) == 0)
-		throw std::runtime_error("404 Not Found");
+		throw std::runtime_error("404 Not Found6");
 	//remove trailing slash "/" if it exists
 	if (path != "./" && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -161,29 +165,30 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 	if (isdirectory(path)){
 		if (!location.tryfile.empty() && path == rqdir
 		&& resourceexists(trypath) && !isdirectory(trypath)){
-			handletryfile(trypath);
+			//handletryfile(trypath);
 			return;
 		}
 		if (!location.auto_index){
 			throw std::runtime_error("403 Forbidden");
 		}
 		else {
-			handledirlist();
+			//handledirlist();
 			return;
 		}
 	}
 	else{
-		handletryfile();
+		//handletryfile();
 	}
 }
 
 void Client::sendget(std::string rquri){
-   
+   (void)rquri;
 }
 
 void Client::parseRoute(int exit, std::string requestdirectory){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
+	std::cout << requestmethod << std::endl;
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
@@ -219,16 +224,16 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 				return;
 			}
 			else if (requestmethod == "POST"){
-				handlepost();
+				//handlepost();
 				return;
 			}
 			else if (requestmethod == "DELETE"){
-				handledelete();
+				//handledelete();
 				return;
 			}
 		}
 	}
-	throw std::runtime_error("404 Not Found");
+	throw std::runtime_error("404 Not Found7");
 }
 
 void Client::handleRequest(){
