@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <sstream>
 #include <sys/stat.h>
-#include <unistd.h> 
+#include <unistd.h>
+#include <dirent.h>
 
 class Client{
 	private:
@@ -37,4 +38,5 @@ class Client{
 		void sendget(std::string rquri);
 		bool resourceexists(const std::string& rpath);
 		bool isdirectory(const std::string& dpath);
+		void handledirlist(std::string& rqdir, std::string& rquri);
 };

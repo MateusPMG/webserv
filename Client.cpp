@@ -14,6 +14,12 @@ std::string Client::getrequest(){
 	return (request);
 }
 
+std::string intToString(int number) {
+    std::stringstream ss;
+    ss << number;
+    return ss.str();
+}
+
 void Client::addRequest(const char* buff, int bufflen){
 	this->previous_request_time = std::time(NULL);
 	this->sent = false;
@@ -80,8 +86,6 @@ void Client::parseRequest(){
 	std::string URI;
 	std::string httpversion;
 	linestream >> method >> URI >> httpversion;
-	std::cout << method << "m" << URI << "m" << httpversion << std::endl;
-	std::cout << "oi" << std::endl;
 	if (method.empty() || URI.empty() || httpversion.empty()){
 		throw std::runtime_error("400 Bad Request1");
 	}
@@ -145,6 +149,33 @@ void Client::parseRequest(){
 	requeststream.read(&requestbody[0], request_body_size);
 }
 
+void Client::handledirlist(std::string& rqdir, std::string& rquri) {
+    std::string response;
+    DIR* dir = opendir(rqdir.c_str());
+    if (dir != NULL) {
+        struct dirent* entry;
+        response += "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
+        while ((entry = readdir(dir)) != NULL) {
+            std::string filename = entry->d_name;
+            if (filename == "." || filename == "..")
+                continue;
+            struct stat fileStat;
+            std::string filepath = rqdir + "/" + filename;
+            if (stat(filepath.c_str(), &fileStat) == 0) {
+                //Append filename to the response
+                response += "<li><a href=\"" + rquri + "/" + filename + "\">" + filename + "</a></li>";
+            }
+        }
+        response += "</ul></body></html>";
+        closedir(dir);
+    } else {
+        response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>";
+    }
+    std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + intToString(response.length()) + "\r\n\r\n" + response;
+    send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);
+	return;
+}
+
 void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route) {
 	std::string path = rqdir + rquri;
 	std::string trypath = rqdir + location.tryfile;
@@ -155,7 +186,12 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		}
 		//cgi handler
 	}
-	if (access(path.c_str(), F_OK) == 0)
+	
+	std::cout << path << "1" << std::endl;
+	std::cout << rqdir <<  "2" <<std::endl;
+	std::cout << rquri << "3" <<std::endl;
+	std::cout << location.tryfile << "4" << std::endl;
+	if (!resourceexists(path))
 		throw std::runtime_error("404 Not Found6");
 	//remove trailing slash "/" if it exists
 	if (path != "./" && path[path.length() - 1] == '/') {
@@ -163,20 +199,25 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 	}
 	//check if its a directory
 	if (isdirectory(path)){
+		std::cout << trypath << std::endl;
 		if (!location.tryfile.empty() && path == rqdir
 		&& resourceexists(trypath) && !isdirectory(trypath)){
 			//handletryfile(trypath);
+			std::cout << "here1" << std::endl;
 			return;
 		}
 		if (!location.auto_index){
+			std::cout << "here2" << std::endl;
 			throw std::runtime_error("403 Forbidden");
 		}
 		else {
-			//handledirlist();
+			std::cout << "here3" << std::endl;
+			handledirlist(rqdir, rquri);
 			return;
 		}
 	}
 	else{
+		std::cout << "here4" << std::endl;
 		//handletryfile();
 	}
 }
@@ -192,6 +233,7 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
+		std::cout << route->first << std::endl;
 		if (route->first == "/" && requestURI != "/") continue;
 		//if the route in the iterator is not part of a longer path in the URI and the URI
 		//doesnt end with an exact match of route then its not this route
@@ -211,11 +253,13 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 			parseRoute(exit + 1, requestdirectory);
 			return;
 		}
+		std::cout << requestURI << "uri1" << std::endl;
 		//prepare URI for further handling since we already established the correct route
 		if (route->second.directory.size()){
 			requestURI.erase(pos, route->first.size());
 			requestdirectory = route->second.directory;
 		}
+		std::cout << requestURI << "uri2" << std::endl;
 		if (requestbody.length() > request_body_size)
 			throw std::runtime_error("413 Payload Too Large");
 		if (requestmethod.size()){
@@ -248,5 +292,8 @@ void Client::handleRequest(){
 	catch(const std::exception& e)
 	{
 		sendErrorResponse(e.what());
+
 	}
+	request.clear();
+	requestbody.clear();
 }

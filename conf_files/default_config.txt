@@ -8,7 +8,9 @@ server {
 	directory var/www;
     routes {
         route / {
-            
+            methods GET POST DELETE;
+            directory var/www/html;
+            auto_index on;
         }
         route /all {
             methods GET POST DELETE;
