@@ -80,7 +80,6 @@ void Client::parseRequest(){
 	std::stringstream requeststream(request.c_str());
 	std::string line;
 	std::getline(requeststream, line);
-	std::cout << line << std::endl;
 	std::stringstream linestream(line);
 	std::string method;
 	std::string URI;
@@ -149,8 +148,25 @@ void Client::parseRequest(){
 	requeststream.read(&requestbody[0], request_body_size);
 }
 
+void Client::handletryfile(std::string path) {
+    std::ifstream fileStream(path.c_str(), std::ios::binary);
+    if (!fileStream.is_open()) {
+        return;
+    }
+    std::stringstream buffer;
+    buffer << fileStream.rdbuf();
+    std::string fileContent = buffer.str();
+    std::string httpResponse = "HTTP/1.1 200 OK\r\n";
+    httpResponse += "Content-Type: text/html\r\n";
+    httpResponse += "Content-Length: " + intToString(fileContent.length()) + "\r\n\r\n";
+    httpResponse += fileContent;
+    send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);
+	return;
+}
+
 void Client::handledirlist(std::string& rqdir, std::string& rquri) {
-    std::string response;
+    (void)rquri;
+	std::string response;
     DIR* dir = opendir(rqdir.c_str());
     if (dir != NULL) {
         struct dirent* entry;
@@ -162,8 +178,8 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
             struct stat fileStat;
             std::string filepath = rqdir + "/" + filename;
             if (stat(filepath.c_str(), &fileStat) == 0) {
-                //Append filename to the response
-                response += "<li><a href=\"" + rquri + "/" + filename + "\">" + filename + "</a></li>";
+                // Append filename to the response without creating a link
+                response += "<li>" + filename + "</li>";
             }
         }
         response += "</ul></body></html>";
@@ -173,12 +189,13 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
     }
     std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + intToString(response.length()) + "\r\n\r\n" + response;
     send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);
-	return;
+    return;
 }
+
 
 void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route) {
 	std::string path = rqdir + rquri;
-	std::string trypath = rqdir + location.tryfile;
+	std::string trypath = path + "/" + location.tryfile;
 	if(route == "/cgi-bin")
 	{
 		if (!rquri.empty() || rquri == "/") {
@@ -186,23 +203,19 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		}
 		//cgi handler
 	}
-	
-	std::cout << path << "1" << std::endl;
-	std::cout << rqdir <<  "2" <<std::endl;
-	std::cout << rquri << "3" <<std::endl;
-	std::cout << location.tryfile << "4" << std::endl;
 	if (!resourceexists(path))
 		throw std::runtime_error("404 Not Found6");
 	//remove trailing slash "/" if it exists
 	if (path != "./" && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
 	}
+	std::cout << path << "1" << std::endl;
 	//check if its a directory
 	if (isdirectory(path)){
 		std::cout << trypath << std::endl;
-		if (!location.tryfile.empty() && path == rqdir
+		if (!location.tryfile.empty()
 		&& resourceexists(trypath) && !isdirectory(trypath)){
-			//handletryfile(trypath);
+			handletryfile(trypath);
 			std::cout << "here1" << std::endl;
 			return;
 		}
@@ -212,14 +225,18 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		}
 		else {
 			std::cout << "here3" << std::endl;
-			handledirlist(rqdir, rquri);
+			handledirlist(path, rquri);
 			return;
 		}
 	}
 	else{
 		std::cout << "here4" << std::endl;
-		//handletryfile();
+		handletryfile(trypath);
 	}
+}
+
+void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route){
+	
 }
 
 void Client::sendget(std::string rquri){
@@ -229,7 +246,6 @@ void Client::sendget(std::string rquri){
 void Client::parseRoute(int exit, std::string requestdirectory){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
-	std::cout << requestmethod << std::endl;
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
@@ -260,6 +276,7 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 			requestdirectory = route->second.directory;
 		}
 		std::cout << requestURI << "uri2" << std::endl;
+		std::cout << requestdirectory + requestURI << " path" << std::endl;
 		if (requestbody.length() > request_body_size)
 			throw std::runtime_error("413 Payload Too Large");
 		if (requestmethod.size()){

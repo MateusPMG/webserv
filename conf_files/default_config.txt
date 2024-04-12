@@ -8,24 +8,27 @@ server {
 	directory var/www;
     routes {
         route / {
-            methods GET POST DELETE;
+            methods GET DELETE;
             directory var/www/html;
             auto_index on;
+			tryfile index.html
         }
         route /all {
-            methods GET POST DELETE;
+            methods GET DELETE;
             directory var/www/html;
             auto_index on;
         }
-		route /cgi {
+		route /cgi-bin {
 			cgi .py;
 			cgi_path var/www/cgi-bin;
 		}
         route /uploads {
-            methods GET POST;
+            methods GET POST DELETE;
             upload_dir var/www/uploads;
 			cgi .py;
 			cgi_path cgi;
+			auto_index on;
+			tryfile example1.html
         }
 		route /try {
 			directory var/www/html/try

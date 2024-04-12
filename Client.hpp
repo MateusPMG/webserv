@@ -39,4 +39,6 @@ class Client{
 		bool resourceexists(const std::string& rpath);
 		bool isdirectory(const std::string& dpath);
 		void handledirlist(std::string& rqdir, std::string& rquri);
+		void handletryfile(std::string path);
+		void handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 };
