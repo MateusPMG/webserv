@@ -24,6 +24,7 @@ server {
 		}
         route /uploads {
             methods GET POST DELETE;
+			directory var/www/uploads;
             upload_dir var/www/uploads;
 			cgi .py;
 			cgi_path cgi;

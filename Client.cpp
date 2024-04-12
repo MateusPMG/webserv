@@ -56,6 +56,30 @@ bool Client::isdirectory(const std::string& dpath){
 	return false;
 }
 
+std::string extractfilename(const std::string& body) {
+	std::cout << body << "  ok?" << std::endl;
+    // Find the start index of the filename in the request body
+    size_t filenameStart = body.find("filename=\"");
+    if (filenameStart == std::string::npos) {
+        // Filename not found in the request body
+        return "";
+    }
+
+    // Adjust the start index to point to the beginning of the filename
+    filenameStart += 10; // Length of "filename=\""
+
+    // Find the end index of the filename in the request body
+    size_t filenameEnd = body.find("\"", filenameStart);
+    if (filenameEnd == std::string::npos) {
+        // End of filename not found in the request body
+        return "";
+    }
+
+    // Extract the filename substring from the request body
+    std::string filename = body.substr(filenameStart, filenameEnd - filenameStart);
+    return filename;
+}
+
 void Client::sendErrorResponse(const std::string& error){
 	std::stringstream response;
     size_t spacePos = error.find(' ');
@@ -117,7 +141,7 @@ void Client::parseRequest(){
 		if (last != std::string::npos)
 			headerValue.erase(last + 1);
 		if (headerValue.empty()){
-			throw std::runtime_error("400 Bad Request");
+			throw std::runtime_error("400 Bad Request1");
 		}
 		requestheaders[headerName] = headerValue;
 	}
@@ -125,7 +149,7 @@ void Client::parseRequest(){
 	if (method == "GET" || method == "DELETE")
 		return;
 	//lets check body size
-	std::map<std::string, std::string>::iterator it = requestheaders.find("Content-length");
+	std::map<std::string, std::string>::iterator it = requestheaders.find("Content-Length");
 	if (it != requestheaders.end()) {
 		std::istringstream iss(it->second);
 		if (!(iss >> request_body_size)) {
@@ -236,7 +260,38 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 }
 
 void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route){
-	
+	(void)rqdir;
+	if(route == "/cgi-bin")
+	{
+		if (!rquri.empty() || rquri == "/") {
+			throw std::runtime_error("401 Unauthorized");
+		}
+		//cgi handler
+		return;
+	}
+	if (location.uploadpath.empty()){
+		throw std::runtime_error("403 Forbidden");
+	}
+	if (!isdirectory(location.uploadpath)){
+		throw std::runtime_error("403 Forbidden");
+	}
+	else{
+	std::string filename;
+	std::cout << requestbody << " not okay?" << std::endl;
+	filename = extractfilename(requestbody);
+	if (filename == "")
+		throw std::runtime_error("400 Bad Request9");
+    std::string filePath = location.uploadpath + "/" + ".txt";
+    std::ofstream outputFile(filePath.c_str(), std::ios::binary);
+    if (!outputFile.is_open()) {
+        throw std::runtime_error("500 Internal Server Error");
+    }
+    outputFile << requestbody;
+    outputFile.close();
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+    response += "<h1>File uploaded successfully!</h1>";
+    send(client_socket_fd, response.c_str(), response.length(), 0);
+	}
 }
 
 void Client::sendget(std::string rquri){
@@ -285,7 +340,7 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 				return;
 			}
 			else if (requestmethod == "POST"){
-				//handlepost();
+				handlepost(requestdirectory, requestURI, route->second, route->first);
 				return;
 			}
 			else if (requestmethod == "DELETE"){
