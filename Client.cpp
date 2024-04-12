@@ -161,15 +161,23 @@ void Client::parseRequest(){
 	if (request_body_size > target_server.getclientbodysize()){
 		throw std::runtime_error("413 Payload Too Large");
 	}
-	//skip over blank line after headers
-	std::getline(requeststream, line);
-	//since there might be images or executables sent we dont want to corrupt them
-	//thus we dont want to interpret any character in the request body by reading it as text
-	//we just want to store it so we will be treating it as binary so no char will be interpreted
-	//Resize requestBody to request_body_size
+	std::cout << line << " line " << std::endl;
+	std::cout << request_body_size << std::endl;
+	// Resize requestBody to request_body_size
 	requestbody.resize(request_body_size);
-	//Read data from requeststream directly into requestbody without any interpretation
-	requeststream.read(&requestbody[0], request_body_size);
+	// Read data from requeststream directly into requestbody without any interpretation
+	char* requestBodyPtr = &requestbody[0]; // Pointer to the beginning of the requestbody buffer
+	int bytesRead = 0; // Keep track of bytes read so far
+	while (static_cast<size_t>(bytesRead) < request_body_size) {
+		requeststream.read(requestBodyPtr + bytesRead, request_body_size - bytesRead);
+		int bytesJustRead = requeststream.gcount();
+		if (bytesJustRead == 0) {
+			// If no bytes were read, and the expected bytes haven't been read yet, it's an error
+			throw std::runtime_error("Incomplete request body");
+		}
+		bytesRead += bytesJustRead;
+	}
+	std::cout << requestbody << "parserequestbody" << std::endl;
 }
 
 void Client::handletryfile(std::string path) {
@@ -299,6 +307,7 @@ void Client::sendget(std::string rquri){
 }
 
 void Client::parseRoute(int exit, std::string requestdirectory){
+	std::cout << requestbody << " here?" << std::endl;
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
 	size_t pos;
