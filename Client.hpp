@@ -41,4 +41,5 @@ class Client{
 		void handledirlist(std::string& rqdir, std::string& rquri);
 		void handletryfile(std::string path);
 		void handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
+		void handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 };

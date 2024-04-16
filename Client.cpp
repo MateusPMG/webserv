@@ -57,6 +57,33 @@ bool Client::isdirectory(const std::string& dpath){
 	return false;
 }
 
+bool deletedirectory(const char* path){
+	DIR* dir = opendir(path);
+    if (dir == NULL) {
+        return false;
+    }
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            std::string filePath = std::string(path) + "/" + entry->d_name;
+
+            if (entry->d_type == DT_DIR) {
+                if (!deletedirectory(filePath.c_str()))
+                    return false;
+            } else {
+                if (remove(filePath.c_str()) != 0) {
+                    return false;
+                }
+            }
+        }
+    }
+    closedir(dir);
+    if (rmdir(path) != 0) {
+        return false;
+    }
+    return true;
+}
+
 std::string extractfilename(const std::string& body) {
 	std::cout << body << "  ok?" << std::endl;
     // Find the start index of the filename in the request body
@@ -308,12 +335,46 @@ void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& lo
 	}
 }
 
+void Client::handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route){
+	(void)location;
+	(void)route;
+	std::string path = rqdir + rquri;
+	std::cout << path << " del test" << std::endl;
+		if (!resourceexists(path)) {
+		throw std::runtime_error("404 Not Found del1");
+	}
+
+	if (isdirectory(path)) {
+		if (deletedirectory(path.c_str())) {
+			std::stringstream responseStream;
+			responseStream << "HTTP/1.1 204 No Content\r\n";
+			responseStream << "Content-Length: 0\r\n";
+			responseStream << "\r\n";
+			std::string response = responseStream.str();
+			send(client_socket_fd, response.c_str(), response.length(), 0);
+    	} else {
+			throw std::runtime_error("500 Internal Server Error");
+    	}
+	} else if (remove(path.c_str()) != 0) {
+        throw std::runtime_error("500 Internal Server Error");
+	} else {
+        std::stringstream responseStream;
+		responseStream << "HTTP/1.1 204 No Content\r\n";
+		responseStream << "Content-Length: 0\r\n";
+		responseStream << "\r\n";
+		std::string response = responseStream.str();
+		send(client_socket_fd, response.c_str(), response.length(), 0);
+	}
+}
+
 void Client::sendget(std::string rquri){
    (void)rquri;
 }
 
 void Client::parseRoute(int exit, std::string requestdirectory){
 	std::cout << requestbody << " here?" << std::endl;
+	std::cout << requestURI << " = uri\n";
+	std::cout << requestmethod << " = requestmethod\n";
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
 	size_t pos;
@@ -359,7 +420,8 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 				return;
 			}
 			else if (requestmethod == "DELETE"){
-				//handledelete();
+				std::cout << "here delete\n";
+				handledelete(requestdirectory, requestURI, route->second, route->first);
 				return;
 			}
 		}
