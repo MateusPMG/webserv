@@ -161,6 +161,7 @@ void Networking::runservers(){
 				//but first we must check if the request sent is for the server who accepted the connection or another server
 				clients[clientindex].settarget(checktarget(clients[clientindex].getrequest(), clients[clientindex].gettarget()));
 				clients[clientindex].handleRequest();
+				closeConnection(i, clientindex);
 			}
 		}
 	}

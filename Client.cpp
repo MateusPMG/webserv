@@ -1,4 +1,5 @@
 #include "Client.hpp"
+#include "Networking.hpp"
 
 Client::Client(Server target, int clientfd):target_server(target),client_socket_fd(clientfd){}
 
@@ -62,6 +63,7 @@ std::string extractfilename(const std::string& body) {
     size_t filenameStart = body.find("filename=\"");
     if (filenameStart == std::string::npos) {
         // Filename not found in the request body
+		std::cout << "not foud in body\n";
         return "";
     }
 
@@ -69,11 +71,14 @@ std::string extractfilename(const std::string& body) {
     filenameStart += 10; // Length of "filename=\""
 
     // Find the end index of the filename in the request body
-    size_t filenameEnd = body.find("\"", filenameStart);
-    if (filenameEnd == std::string::npos) {
-        // End of filename not found in the request body
-        return "";
-    }
+    size_t filenameEnd = body.find('\"', filenameStart);
+	if (filenameEnd == std::string::npos) {
+		filenameEnd = body.find('\'', filenameStart); // Search for single quote if double quote not found
+		if (filenameEnd == std::string::npos) {
+			std::cout << "End quote not found\n";
+			return "";
+		}
+	}
 
     // Extract the filename substring from the request body
     std::string filename = body.substr(filenameStart, filenameEnd - filenameStart);
@@ -287,9 +292,10 @@ void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& lo
 	std::string filename;
 	std::cout << requestbody << " not okay?" << std::endl;
 	filename = extractfilename(requestbody);
+	std::cout << filename << " = filename\n";
 	if (filename == "")
 		throw std::runtime_error("400 Bad Request9");
-    std::string filePath = location.uploadpath + "/" + ".txt";
+    std::string filePath = location.uploadpath + "/" + filename;
     std::ofstream outputFile(filePath.c_str(), std::ios::binary);
     if (!outputFile.is_open()) {
         throw std::runtime_error("500 Internal Server Error");
