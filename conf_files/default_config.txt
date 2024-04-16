@@ -45,3 +45,51 @@ server {
 		}
     }
 }
+
+server {
+    port 8081;
+    host localhost; #might be redudant
+    server_name example.com;
+    index index.html;
+    client_body_size 10MB;
+    error_page 404.html;
+	directory var/www;
+    routes {
+        route / {
+            methods GET DELETE;
+            directory var/test1/html;
+            auto_index on;
+			tryfile index.html
+        }
+        route /all {
+            methods GET DELETE;
+            directory var/test1/html;
+            auto_index on;
+        }
+		route /cgi-bin {
+			cgi .py;
+			cgi_path var/test1/cgi-bin;
+		}
+        route /uploads {
+            methods GET POST DELETE;
+			directory var/test1/uploads;
+            upload_dir var/test1/uploads;
+			cgi .py;
+			cgi_path cgi;
+			auto_index on;
+			tryfile example1.html
+        }
+		route /var/test1/delete {
+			methods GET DELETE;
+            directory var/test1/delete;
+            auto_index on;
+		}
+		route /try {
+			directory var/test1/html/try
+			tryfile details.html
+		}
+		route /redir {
+			return /all
+		}
+    }
+}
