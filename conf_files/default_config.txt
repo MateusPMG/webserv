@@ -1,9 +1,9 @@
 server {
     port 8080;
-    host localhost; #might be redudant
-    server_name example.com;
+    host 127.0.0.1; #might be redudant
+    server_name ay.com;
     index index.html;
-    client_body_size 10MB;
+    client_body_size 1MB;
     error_page 404.html;
 	directory var/www;
     routes {
@@ -48,8 +48,8 @@ server {
 
 server {
     port 8081;
-    host localhost; #might be redudant
-    server_name example.com;
+    host 127.0.0.1; #might be redudant
+    server_name lmao.com;
     index index.html;
     client_body_size 10MB;
     error_page 404.html;

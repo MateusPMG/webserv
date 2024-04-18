@@ -22,9 +22,11 @@ std::string intToString(int number) {
 }
 
 void Client::addRequest(const char* buff, int bufflen){
+	(void) bufflen;
 	this->previous_request_time = std::time(NULL);
 	this->sent = false;
-	this->request.append(buff, bufflen);
+	std::string rline (buff);
+	this->request.append(rline);
 }
 
 bool Client::timeout(){
@@ -128,11 +130,11 @@ void Client::sendErrorResponse(const std::string& error){
     response << "</body>\r\n";
     response << "</html>\r\n"; 
 	std::string responseStr = response.str();
-	send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0);
+	if (send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0) <= 0)
+		return; //closes the connection immediately
 }
 
 void Client::parseRequest(){
-	std::cout << request << std::endl;
 	std::stringstream requeststream(request.c_str());
 	std::string line;
 	std::getline(requeststream, line);
@@ -429,7 +431,7 @@ void Client::parseRoute(int exit, std::string requestdirectory){
 	throw std::runtime_error("404 Not Found7");
 }
 
-void Client::handleRequest(){
+int Client::handleRequest(){
 	sent = true;
 	previous_request_time = std::time(NULL);
 	try
@@ -441,8 +443,9 @@ void Client::handleRequest(){
 	catch(const std::exception& e)
 	{
 		sendErrorResponse(e.what());
-
+		return (1);
 	}
 	request.clear();
 	requestbody.clear();
+	return (1);
 }

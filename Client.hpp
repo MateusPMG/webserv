@@ -11,7 +11,6 @@
 class Client{
 	private:
 		Server target_server;
-		int client_socket_fd;
 		time_t	previous_request_time;
 		std::string request;
 		bool sent;
@@ -20,12 +19,13 @@ class Client{
 		std::string requestURI;
 		std::string requestbody;
 	public:
+		int client_socket_fd;
 		Client(Server target, int clientfd);
 		int getsocketfd();
 		void addRequest(const char* buff, int bufflen);
 		bool timeout();
 		bool requestready();
-		void handleRequest();
+		int handleRequest();
 		void settarget(Server& target);
 		std::string getrequest();
 		Server& gettarget();

@@ -8,6 +8,12 @@ Networking::Networking(const ConfigParser& parser){
     }
 }
 
+std::string inttostring(int number) {
+    std::stringstream ss;
+    ss << number;
+    return ss.str();
+}
+
 Networking::~Networking(){}
 
 void Networking::booting(){
@@ -84,23 +90,45 @@ void Networking::receiveRequest(int clientindex, int fd, int pollindex){
 }
 
 Server& Networking::checktarget(const std::string& buff, Server& defaultserv){
-    size_t hostPos = buff.find("Host:");
+    (void)defaultserv;
+	size_t hostPos = buff.find("Host:");
 	std::string servname;
-    //If Host header is found
     if (hostPos != std::string::npos) {
-        //Extract the host information using stringstream
+        // Extract the host information using stringstream
         std::istringstream iss(buff.substr(hostPos));
         std::string hostLine;
         std::getline(iss, hostLine);
-        size_t hostStartPos = hostLine.find(":") + 2; //Move past the ": "
+        // Extract the server name from the host line
+        size_t hostStartPos = hostLine.find(":") + 2; // Move past the ": "
         servname = hostLine.substr(hostStartPos);
+        // Trim any leading or trailing whitespace
+        size_t endPos = servname.find("\r");
+        if (endPos != std::string::npos) {
+            servname = servname.substr(0, endPos);
+        }
 	}
-	//check for host name and server name
+	std::cout << servname << " = request serv name\n";
+	if (servname.find(":") != std::string::npos){
+		if (servname.substr(0, servname.find(":")) == "localhost"){
+			servname = "127.0.0.1" + servname.substr(servname.find(":"));
+		}
+		std::cout << servname << " after subs" << std::endl;
+		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it){
+			std::cout << it->gethost() << " host \n";
+			std::cout << it->getservername() << " server name \n";
+			std::cout << it->getport() << " port \n";
+			std::cout << servname.substr(0, servname.find(":")) << " and " << servname.substr(servname.find(":") + 1) << std::endl;
+ 			if (servname.substr(0, servname.find(":")) == it->gethost() && servname.substr(servname.find(":") + 1) == inttostring(it->getport())){
+				std::cout << "made it here\n";
+				return (*it);
+			}
+		}
+	}
 	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it){
-		if (servname == it->getservername() && it->gethost() == defaultserv.gethost())
+		if (servname == it->getservername())
 			return (*it);
 	}
-	return (defaultserv);
+	throw (std::runtime_error("Error: Host: not found"));
 }
 
 void Networking::runservers(){
@@ -159,9 +187,30 @@ void Networking::runservers(){
 					continue;
 				//if we reach this point we parse and handle the request to build a response
 				//but first we must check if the request sent is for the server who accepted the connection or another server
-				clients[clientindex].settarget(checktarget(clients[clientindex].getrequest(), clients[clientindex].gettarget()));
-				clients[clientindex].handleRequest();
-				closeConnection(i, clientindex);
+				try
+				{
+					clients[clientindex].settarget(checktarget(clients[clientindex].getrequest(), clients[clientindex].gettarget()));
+					if (clients[clientindex].handleRequest() == 1)
+						closeConnection(i, clientindex);
+				}
+				catch(const std::exception& e)
+				{
+					 std::string response =
+						"HTTP/1.1 404 Not Found\r\n"
+						"Content-Type: text/html\r\n"
+						"\r\n"
+						"<!DOCTYPE html>\r\n"
+						"<html>\r\n"
+						"<head><title>404 Not Found</title></head>\r\n"
+						"<body>\r\n"
+						"<h1>404 Not Found</h1>\r\n"
+						"<p>The requested resource could not be found.</p>\r\n"
+						"</body>\r\n"
+						"</html>\r\n";
+					send(clients[clientindex].client_socket_fd, response.c_str(), response.length(), 0);
+					std::cerr << e.what() << '\n';
+					closeConnection(i, clientindex);
+				}
 			}
 		}
 	}

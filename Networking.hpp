@@ -47,11 +47,11 @@ class Networking{
 		void acceptNewConnection(Server& server);
 		//receive and store the request on the respective client for request parsing 
 		void receiveRequest(int clientindex, int fd, int pollindex);
-		//close a connection
-		void closeConnection(int pollindex, int clientindex);
 		//checks if request asks for the connection server or another
 		Server& checktarget(const std::string& buff, Server& defaultserv);
 	public:
+		//close a connection
+		void closeConnection(int pollindex, int clientindex);
 		//constructor and destructor
 		Networking(const ConfigParser& parser);
 		~Networking();
