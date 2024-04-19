@@ -21,11 +21,29 @@ std::string intToString(int number) {
     return ss.str();
 }
 
+std::string extractboundary(const std::string& requestData) {
+    std::string boundary;
+    size_t boundaryStart = requestData.find("boundary=");
+    if (boundaryStart != std::string::npos) {
+        boundaryStart += 9;
+        size_t boundaryEnd = requestData.find("\r\n", boundaryStart);
+        if (boundaryEnd != std::string::npos) {
+            boundary = requestData.substr(boundaryStart, boundaryEnd - boundaryStart);
+        }
+    }
+    return boundary;
+}
+
 void Client::addRequest(const char* buff, int bufflen){
 	(void) bufflen;
 	this->previous_request_time = std::time(NULL);
 	this->sent = false;
 	std::string rline (buff);
+	std::string contentTypeHeader = "Content-Type: multipart/form-data";
+	if (rline.find(contentTypeHeader) != std::string::npos){
+		std::string boundary = extractboundary(rline);
+		rline = multipartrequest(rline, boundary);
+	}
 	this->request.append(rline);
 }
 
