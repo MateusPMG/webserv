@@ -183,7 +183,7 @@ void Networking::runservers(){
 				}
 				//check if we appended the last request chunk if not
 				//it means the client object hasnt received the whole request yet and we continue
-				if (!clients[clientindex].requestready())
+				if (!clients[clientindex].requestready() && clients[clientindex].multiparts.empty())
 					continue;
 				//if we reach this point we parse and handle the request to build a response
 				//but first we must check if the request sent is for the server who accepted the connection or another server

@@ -34,6 +34,29 @@ std::string extractboundary(const std::string& requestData) {
     return boundary;
 }
 
+std::vector<std::string> Client::multipartrequest(std::string rline, std::string boundary){
+	std::vector<std::string> parts;
+	std::string firstheader;
+	size_t boundarypos = rline.find("--" + boundary);
+	std::cout << boundarypos << "= first boundary post" << std::endl;
+	firstheader = rline.substr(0, boundarypos - 1);
+	std::cout << firstheader << "= first header" <<std::endl;
+	if (!firstheader.empty()){	
+		size_t nextboundarypos;
+		while(boundarypos != std::string::npos){
+			nextboundarypos = rline.find("--" + boundary, boundarypos + boundary.length() - 3);
+			if (nextboundarypos == std::string::npos)
+				break;
+			std::cout << nextboundarypos << "= current boundary pos" << std::endl;
+			parts.push_back(firstheader + rline.substr(boundarypos + boundary.length() + 3, nextboundarypos - boundarypos - boundary.length() - 3));
+			//
+			boundarypos = nextboundarypos;
+		}
+	}
+	std::cout << " finished parsing parts" << std::endl;
+	return parts;
+}
+
 void Client::addRequest(const char* buff, int bufflen){
 	(void) bufflen;
 	this->previous_request_time = std::time(NULL);
@@ -42,10 +65,11 @@ void Client::addRequest(const char* buff, int bufflen){
 	std::string contentTypeHeader = "Content-Type: multipart/form-data";
 	if (rline.find(contentTypeHeader) != std::string::npos){
 		std::string boundary = extractboundary(rline);
-		//rline = multipartrequest(rline, boundary);
-		return;
+		multiparts = multipartrequest(rline, boundary);
+		std::cout << " exited multi function" << std::endl;
 	}
 	this->request.append(rline);
+	return;
 }
 
 bool Client::timeout(){
@@ -194,7 +218,7 @@ void Client::parseRequest(){
 		if (last != std::string::npos)
 			headerValue.erase(last + 1);
 		if (headerValue.empty()){
-			throw std::runtime_error("400 Bad Request1");
+			throw std::runtime_error("400 Bad Request92");
 		}
 		requestheaders[headerName] = headerValue;
 	}
@@ -455,9 +479,21 @@ int Client::handleRequest(){
 	previous_request_time = std::time(NULL);
 	try
 	{
+		if (!multiparts.empty()){
+		std::cout << " = made it handle" << std::endl;
+			for (size_t i = 0; i < multiparts.size(); i++){
+				request = multiparts[i];
+				std::cout << request << std::endl;
+				parseRequest();
+				std::string dir = target_server.getdirectory();
+				parseRoute(0, dir);
+			}
+		}
+		else{
 		parseRequest();
 		std::string dir = target_server.getdirectory();
 		parseRoute(0, dir);
+		}
 	}
 	catch(const std::exception& e)
 	{
@@ -466,5 +502,7 @@ int Client::handleRequest(){
 	}
 	request.clear();
 	requestbody.clear();
+	if (!multiparts.empty())
+		multiparts.clear();
 	return (1);
 }

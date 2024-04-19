@@ -19,6 +19,7 @@ class Client{
 		std::string requestURI;
 		std::string requestbody;
 	public:
+		std::vector <std::string> multiparts;
 		int client_socket_fd;
 		Client(Server target, int clientfd);
 		int getsocketfd();
@@ -42,4 +43,5 @@ class Client{
 		void handletryfile(std::string path);
 		void handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		void handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
+		std::vector<std::string> multipartrequest(std::string rline, std::string boundary);
 };
