@@ -42,7 +42,8 @@ void Client::addRequest(const char* buff, int bufflen){
 	std::string contentTypeHeader = "Content-Type: multipart/form-data";
 	if (rline.find(contentTypeHeader) != std::string::npos){
 		std::string boundary = extractboundary(rline);
-		rline = multipartrequest(rline, boundary);
+		//rline = multipartrequest(rline, boundary);
+		return;
 	}
 	this->request.append(rline);
 }
