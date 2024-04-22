@@ -19,6 +19,7 @@ class Client{
 		std::string requestURI;
 		std::string requestbody;
 	public:
+		std::vector <std::string> multibody;
 		std::vector <std::string> multiparts;
 		int client_socket_fd;
 		Client(Server target, int clientfd);
@@ -45,4 +46,5 @@ class Client{
 		void handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		std::vector<std::string> multipartrequest(std::string rline, std::string boundary);
 		void parsemulti();
+		void parseRoutemulti(int exit, std::string requestdirectory, std::string requestbody);
 };

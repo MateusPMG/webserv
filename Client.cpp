@@ -41,11 +41,9 @@ std::vector<std::string> Client::multipartrequest(std::string rline, std::string
 	std::cout << boundarypos << "= first boundary post" << std::endl;
 	firstheader = rline.substr(0, boundarypos - 1);
 	std::cout << firstheader << "= first header" <<std::endl;
-
 	std::istringstream headerStream(firstheader);
     std::string method, URI, httpversion;
     headerStream >> method >> URI >> httpversion;
-
     std::cout << "Method: " << method << std::endl;
     std::cout << "URI: " << URI << std::endl;
     std::cout << "HTTP Version: " << httpversion << std::endl;
@@ -63,8 +61,17 @@ std::vector<std::string> Client::multipartrequest(std::string rline, std::string
 			boundarypos = nextboundarypos;
 		}
 	}
-	for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
-		std::cout << *it << std::endl;
+	for (size_t i = 0; i < parts.size(); ++i) {
+		std::istringstream partStream(parts[i]);
+		std::string line;
+		while (std::getline(partStream, line) && !line.empty()) {
+		}
+		std::string requestBody;
+		while (std::getline(partStream, line)) {
+			requestBody += line + "\n";
+		}
+		std::cout << "Request body: " << requestBody ;
+		multibody.push_back(requestBody);
 	}
 	std::cout << " finished parsing parts" << std::endl;
 	return parts;
@@ -512,10 +519,9 @@ int Client::handleRequest(){
 			for (size_t i = 0; i < multiparts.size(); i++){
 				request = multiparts[i];
 				std::cout << request << std::endl;
-				parseRequest();
 				std::cout << " = made it handle" << std::endl;
 				std::string dir = target_server.getdirectory();
-				parseRoute(0, dir);
+				parseRoutemulti(0, dir, multibody[i]);
 			}
 		}
 		else{
