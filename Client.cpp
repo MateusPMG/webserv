@@ -41,6 +41,16 @@ std::vector<std::string> Client::multipartrequest(std::string rline, std::string
 	std::cout << boundarypos << "= first boundary post" << std::endl;
 	firstheader = rline.substr(0, boundarypos - 1);
 	std::cout << firstheader << "= first header" <<std::endl;
+
+	std::istringstream headerStream(firstheader);
+    std::string method, URI, httpversion;
+    headerStream >> method >> URI >> httpversion;
+
+    std::cout << "Method: " << method << std::endl;
+    std::cout << "URI: " << URI << std::endl;
+    std::cout << "HTTP Version: " << httpversion << std::endl;
+	requestmethod = method;
+	requestURI = URI;
 	if (!firstheader.empty()){	
 		size_t nextboundarypos;
 		while(boundarypos != std::string::npos){
@@ -48,10 +58,13 @@ std::vector<std::string> Client::multipartrequest(std::string rline, std::string
 			if (nextboundarypos == std::string::npos)
 				break;
 			std::cout << nextboundarypos << "= current boundary pos" << std::endl;
-			parts.push_back(firstheader + rline.substr(boundarypos + boundary.length() + 3, nextboundarypos - boundarypos - boundary.length() - 3));
+			parts.push_back(rline.substr(boundarypos + boundary.length() + 3, nextboundarypos - boundarypos - boundary.length() - 4));
 			//
 			boundarypos = nextboundarypos;
 		}
+	}
+	for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+		std::cout << *it << std::endl;
 	}
 	std::cout << " finished parsing parts" << std::endl;
 	return parts;
@@ -70,6 +83,10 @@ void Client::addRequest(const char* buff, int bufflen){
 	}
 	this->request.append(rline);
 	return;
+}
+
+void Client::parsemulti(){
+
 }
 
 bool Client::timeout(){
@@ -177,6 +194,8 @@ void Client::sendErrorResponse(const std::string& error){
 		return; //closes the connection immediately
 }
 
+
+
 void Client::parseRequest(){
 	std::stringstream requeststream(request.c_str());
 	std::string line;
@@ -205,12 +224,13 @@ void Client::parseRequest(){
 	requestURI = URI;
 	//the "\r" signals the end of the headers and the start of the body of the request/chunk
 	//here we store the headers
-	while (std::getline(requeststream, line) && line != "\r"){
+	while ((line != "\r" && line != "\r\n" && !line.empty()) && std::getline(requeststream, line)){
 		std::stringstream linestream1(line);
 		std::string headerName;
 		std::string headerValue;
 		std::getline(linestream1, headerName, ':');
 		std::getline(linestream1, headerValue);
+		std::cout << "header=" << headerName << "/ value=" << headerValue << std::endl;
 		std::size_t first = headerValue.find_first_not_of(' ');
 		if (first != std::string::npos)
 			headerValue.erase(0, first);
@@ -218,10 +238,14 @@ void Client::parseRequest(){
 		if (last != std::string::npos)
 			headerValue.erase(last + 1);
 		if (headerValue.empty()){
+			std::cout << "contains=" << line << std::endl;
 			throw std::runtime_error("400 Bad Request92");
 		}
 		requestheaders[headerName] = headerValue;
 	}
+	if (line.empty())
+		std::getline(requeststream, line);
+	std::cout << "1\n";
 	//generally GET and DELETE methods dont have a body in their request so we skip the rest
 	if (method == "GET" || method == "DELETE")
 		return;
@@ -235,25 +259,27 @@ void Client::parseRequest(){
 	} else {
 		throw std::runtime_error("400 Bad Request5");
 	}
+	std::cout << "1\n";
 	if (request_body_size > target_server.getclientbodysize()){
 		throw std::runtime_error("413 Payload Too Large");
 	}
 	std::cout << line << " line " << std::endl;
 	std::cout << request_body_size << std::endl;
-	// Resize requestBody to request_body_size
 	requestbody.resize(request_body_size);
-	// Read data from requeststream directly into requestbody without any interpretation
-	char* requestBodyPtr = &requestbody[0]; // Pointer to the beginning of the requestbody buffer
-	int bytesRead = 0; // Keep track of bytes read so far
+	char* requestBodyPtr = &requestbody[0]; 
+	int bytesRead = 0;
+	std::cout << "1\n";
 	while (static_cast<size_t>(bytesRead) < request_body_size) {
 		requeststream.read(requestBodyPtr + bytesRead, request_body_size - bytesRead);
 		int bytesJustRead = requeststream.gcount();
 		if (bytesJustRead == 0) {
+			std::cout << " failed wellp\n";
 			// If no bytes were read, and the expected bytes haven't been read yet, it's an error
 			throw std::runtime_error("Incomplete request body");
 		}
 		bytesRead += bytesJustRead;
 	}
+	std::cout << " oi\n";
 	std::cout << requestbody << "parserequestbody" << std::endl;
 }
 
@@ -374,8 +400,11 @@ void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& lo
     }
     outputFile << requestbody;
     outputFile.close();
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
-    response += "<h1>File uploaded successfully!</h1>";
+    std::string response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/html\r\n"
+                       "\r\n"
+                       "<h1>File uploaded successfully!</h1>";
+	std::cout << response << std::endl;
     send(client_socket_fd, response.c_str(), response.length(), 0);
 	}
 }
@@ -480,11 +509,11 @@ int Client::handleRequest(){
 	try
 	{
 		if (!multiparts.empty()){
-		std::cout << " = made it handle" << std::endl;
 			for (size_t i = 0; i < multiparts.size(); i++){
 				request = multiparts[i];
 				std::cout << request << std::endl;
 				parseRequest();
+				std::cout << " = made it handle" << std::endl;
 				std::string dir = target_server.getdirectory();
 				parseRoute(0, dir);
 			}

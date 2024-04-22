@@ -44,4 +44,5 @@ class Client{
 		void handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		void handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		std::vector<std::string> multipartrequest(std::string rline, std::string boundary);
+		void parsemulti();
 };
