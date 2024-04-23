@@ -322,7 +322,7 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
         response += "</ul></body></html>";
         closedir(dir);
     } else {
-        response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>";
+        throw std::runtime_error("404 Not Found");
     }
     std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + intToString(response.length()) + "\r\n\r\n" + response;
     send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);

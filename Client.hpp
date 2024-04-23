@@ -10,7 +10,6 @@
 
 class Client{
 	private:
-		Server target_server;
 		time_t	previous_request_time;
 		std::string request;
 		bool sent;
@@ -19,6 +18,7 @@ class Client{
 		std::string requestURI;
 		std::string requestbody;
 	public:
+		Server target_server;
 		std::vector <std::string> multibody;
 		std::vector <std::string> multiparts;
 		int client_socket_fd;

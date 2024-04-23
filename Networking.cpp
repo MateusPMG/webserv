@@ -193,9 +193,37 @@ void Networking::runservers(){
 					if (clients[clientindex].handleRequest() == 1)
 						closeConnection(i, clientindex);
 				}
-				catch(const std::exception& e)
+				catch(const std::string& e)
 				{
-					 std::string response =
+					std::stringstream response;
+					size_t spacePos = e.find(' ');
+					std::string errorCode = e.substr(0, spacePos);
+					std::string errorpage = clients[clientindex].target_server.geterrorpage();
+					if (!errorpage.empty()){
+						size_t codepos = errorpage.find('.');
+						std::string pagecode = errorpage.substr(0, codepos);
+						if (pagecode == errorCode){
+							std::string errorpagepath = clients[clientindex].target_server.getdirectory() + "/" + clients[clientindex].target_server.geterrorpage();
+							std::cout << errorpagepath << "= er page path" << std::endl;
+							std::ifstream html_file(errorpagepath.c_str());
+							if (html_file.is_open()) {
+								std::stringstream buffer;
+								buffer << html_file.rdbuf();
+								std::string html_content = buffer.str();
+								html_file.close();
+								std::string http_response = "HTTP/1.1 " + errorCode + "\r\n";
+								http_response += "Content-Type: text/html\r\n";
+								http_response += "Content-Length: " + inttostring(html_content.size()) + "\r\n";
+								http_response += "\r\n";
+								http_response += html_content;
+								if (send(clients[clientindex].client_socket_fd, http_response.c_str(), http_response.size(), 0) <= 0)
+									return;
+								return;
+							}
+							std::cout << "didnt enter" << std::endl;
+						}
+					}
+					std::string responses =
 						"HTTP/1.1 404 Not Found\r\n"
 						"Content-Type: text/html\r\n"
 						"\r\n"
@@ -207,8 +235,8 @@ void Networking::runservers(){
 						"<p>The requested resource could not be found.</p>\r\n"
 						"</body>\r\n"
 						"</html>\r\n";
-					send(clients[clientindex].client_socket_fd, response.c_str(), response.length(), 0);
-					std::cerr << e.what() << '\n';
+					send(clients[clientindex].client_socket_fd, responses.c_str(), responses.length(), 0);
+					std::cerr << e << '\n';
 					closeConnection(i, clientindex);
 				}
 			}
