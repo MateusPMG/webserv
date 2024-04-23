@@ -157,6 +157,31 @@ void Client::sendErrorResponse(const std::string& error){
 	std::stringstream response;
     size_t spacePos = error.find(' ');
     std::string errorCode = error.substr(0, spacePos);
+	std::string errorpage = target_server.geterrorpage();
+	if (!errorpage.empty()){
+		size_t codepos = errorpage.find('.');
+		std::string pagecode = errorpage.substr(0, codepos);
+		if (pagecode == errorCode){
+			std::string errorpagepath = target_server.getdirectory() + "/" + target_server.geterrorpage();
+			std::cout << errorpagepath << "= er page path" << std::endl;
+			std::ifstream html_file(errorpagepath.c_str());
+			if (html_file.is_open()) {
+				std::stringstream buffer;
+				buffer << html_file.rdbuf();
+				std::string html_content = buffer.str();
+				html_file.close();
+				std::string http_response = "HTTP/1.1 " + errorCode + "\r\n";
+				http_response += "Content-Type: text/html\r\n";
+				http_response += "Content-Length: " + intToString(html_content.size()) + "\r\n";
+				http_response += "\r\n";
+				http_response += html_content;
+				if (send(client_socket_fd, http_response.c_str(), http_response.size(), 0) <= 0)
+					return;
+				return;
+			}
+			std::cout << "didnt enter" << std::endl;
+		}
+	}
     std::string errorReason = error.substr(spacePos + 1);
     response << "HTTP/1.1 " << errorCode << " " << errorReason << "\r\n";
     response << "Content-Type: text/html\r\n\r\n";
@@ -201,7 +226,7 @@ void Client::parseRequest(){
 	requestURI = URI;
 	//the "\r" signals the end of the headers and the start of the body of the request/chunk
 	//here we store the headers
-	while ((line != "\r" && line != "\r\n" && !line.empty()) && std::getline(requeststream, line)){
+	while (std::getline(requeststream, line) && (line != "\r" && line != "\r\n" && !line.empty())){
 		std::stringstream linestream1(line);
 		std::string headerName;
 		std::string headerValue;

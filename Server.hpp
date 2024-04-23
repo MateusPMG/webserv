@@ -42,4 +42,5 @@ class Server{
 		const std::map<std::string, Routes>& getroutes();
 		const std::string& getdirectory(); 
 		const std::string& getindex();
+		const std::string& geterrorpage();
 };

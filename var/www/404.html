@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #343a40;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        window.onload = function() {
+            var httpRequest = new XMLHttpRequest();
+            httpRequest.open('GET', window.location.href, false);
+            httpRequest.send();
+            if (httpRequest.status === 404) {
+                document.getElementById('error-message').innerHTML = httpRequest.responseText;
+            }
+        }
+    </script>
+    <div class="container">
+        <h1>404 - Page Not Found</h1>
+        <p id="error-message">The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+        <p>Go back to <a href="/">Homepage</a></p>
+    </div>
+</body>
+</html>
+

@@ -114,3 +114,7 @@ const std::string& Server::getdirectory(){
 const std::string& Server::getindex(){
 	return (index);
 }
+
+const std::string& Server::geterrorpage(){
+	return (error_page_path);
+}
