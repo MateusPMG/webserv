@@ -46,5 +46,7 @@ class Client{
 		void handledelete(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route);
 		std::vector<std::string> multipartrequest(std::string rline, std::string boundary);
 		void parsemulti();
-		void parseRoutemulti(int exit, std::string requestdirectory, std::string requestbody);
+		void parseRoutemulti(int exit, std::string requestdirectory, std::string mrequestbody, size_t i);
+		void handlemultipost(std::string& rqdir, std::string& rquri ,std::string& rbody, const Routes& location, const std::string& route, size_t i);
+		std::string extractfilename(const std::string& body);
 };

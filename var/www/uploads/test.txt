@@ -1,9 +1,0 @@
---------------------------f9b043076312a06f
-Content-Disposition: form-data; name="file"; filename="test.txt"
-Content-Type: text/plain
-
-test file here
-
-hey
-
---------------------------f9b043076312a06f--

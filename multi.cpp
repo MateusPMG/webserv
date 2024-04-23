@@ -1,12 +1,36 @@
 #include "Client.hpp"
 
-void Client::parseRoutemulti(int exit, std::string requestdirectory, std::string mrequestbody){
+std::string Client::extractfilename(const std::string& body) {
+	std::cout << body << "  ok?" << std::endl;
+    // Find the start index of the filename in the request body
+    size_t filenameStart = body.find("filename=\"");
+    if (filenameStart == std::string::npos) {
+        // Filename not found in the request body
+		std::cout << "not foud in body\n";
+        return "";
+    }
+    // Adjust the start index to point to the beginning of the filename
+    filenameStart += 10; // Length of "filename=\""
+    // Find the end index of the filename in the request body
+    size_t filenameEnd = body.find('\"', filenameStart);
+	if (filenameEnd == std::string::npos) {
+		filenameEnd = body.find('\'', filenameStart); // Search for single quote if double quote not found
+		if (filenameEnd == std::string::npos) {
+			std::cout << "End quote not found\n";
+			return "";
+		}
+	}
+    // Extract the filename substring from the request body
+    std::string filename = body.substr(filenameStart, filenameEnd - filenameStart);
+    return filename;
+}
+
+void Client::parseRoutemulti(int exit, std::string requestdirectory, std::string mrequestbody, size_t i){
 	if (exit >= 10)
 		throw std::runtime_error("508 Loop Detected");
 	size_t pos;
 	std::map<std::string, Routes>::const_iterator route;
 	for (route = target_server.getroutes().begin(); route != target_server.getroutes().end(); route++){
-		std::cout << route->first << std::endl;
 		if (route->first == "/" && requestURI != "/") continue;
 		if (requestURI.find(route->first + '/') == std::string::npos
 		&& (requestURI.length() < route->first.length()
@@ -18,30 +42,14 @@ void Client::parseRoutemulti(int exit, std::string requestdirectory, std::string
 			throw std::runtime_error("405 Method Not Allowed");
 		if (route->second.redirection.size()){
 			requestURI.erase(pos, route->first.size()).insert(pos, route->second.redirection);
-			parseRoutemulti(exit + 1, requestdirectory, requestbody);
+			parseRoutemulti(exit + 1, requestdirectory, requestbody, i);
 			return;
 		}
-		std::cout << requestURI << "uri1" << std::endl;
-		if (route->second.directory.size()){
-			requestURI.erase(pos, route->first.size());
-			requestdirectory = route->second.directory;
-		}
-		std::cout << requestURI << "uri2" << std::endl;
-		std::cout << requestdirectory + requestURI << " path" << std::endl;
-		if (mrequestbody.length() > request_body_size)
-			throw std::runtime_error("413 Payload Too Large");
+		if (mrequestbody.length() > target_server.getclientbodysize())
+			throw std::runtime_error("413 Payload Too Large1");
 		if (requestmethod.size()){
-			if (requestmethod == "GET"){
-				handlemultiget(requestdirectory, requestURI, route->second, route->first);
-				return;
-			}
-			else if (requestmethod == "POST"){
-				handlemultipost(requestdirectory, requestURI, route->second, route->first);
-				return;
-			}
-			else if (requestmethod == "DELETE"){
-				std::cout << "here delete\n";
-				handlemultidelete(requestdirectory, requestURI, route->second, route->first);
+			if (requestmethod == "POST"){
+				handlemultipost(requestdirectory, requestURI, mrequestbody, route->second, route->first, i);
 				return;
 			}
 		}
@@ -49,3 +57,39 @@ void Client::parseRoutemulti(int exit, std::string requestdirectory, std::string
 	throw std::runtime_error("404 Not Found7");
 }
 
+void Client::handlemultipost(std::string& rqdir, std::string& rquri ,std::string& rbody, const Routes& location, const std::string& route, size_t i){
+	(void)rqdir;
+	if(route == "/cgi-bin")
+	{
+		if (!rquri.empty() || rquri == "/") {
+			throw std::runtime_error("401 Unauthorized");
+		}
+		//cgi handler
+		return;
+	}
+	if (location.uploadpath.empty()){
+		throw std::runtime_error("403 Forbidden");
+	}
+	if (!isdirectory(location.uploadpath)){
+		throw std::runtime_error("403 Forbidden");
+	}
+	else{
+	std::string filename;
+	filename = extractfilename(multiparts[i]);
+	std::cout << filename << " = filename\n";
+	if (filename == "")
+		throw std::runtime_error("400 Bad Request9");
+    std::string filePath = location.uploadpath + "/" + filename;
+    std::ofstream outputFile(filePath.c_str(), std::ios::binary);
+    if (!outputFile.is_open()) {
+        throw std::runtime_error("500 Internal Server Error");
+    }
+    outputFile << rbody;
+    outputFile.close();
+    std::string response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/html\r\n"
+                       "\r\n"
+                       "<h1>File uploaded successfully!</h1>";
+    send(client_socket_fd, response.c_str(), response.length(), 0);
+	}
+}

@@ -153,34 +153,6 @@ bool deletedirectory(const char* path){
     return true;
 }
 
-std::string extractfilename(const std::string& body) {
-	std::cout << body << "  ok?" << std::endl;
-    // Find the start index of the filename in the request body
-    size_t filenameStart = body.find("filename=\"");
-    if (filenameStart == std::string::npos) {
-        // Filename not found in the request body
-		std::cout << "not foud in body\n";
-        return "";
-    }
-
-    // Adjust the start index to point to the beginning of the filename
-    filenameStart += 10; // Length of "filename=\""
-
-    // Find the end index of the filename in the request body
-    size_t filenameEnd = body.find('\"', filenameStart);
-	if (filenameEnd == std::string::npos) {
-		filenameEnd = body.find('\'', filenameStart); // Search for single quote if double quote not found
-		if (filenameEnd == std::string::npos) {
-			std::cout << "End quote not found\n";
-			return "";
-		}
-	}
-
-    // Extract the filename substring from the request body
-    std::string filename = body.substr(filenameStart, filenameEnd - filenameStart);
-    return filename;
-}
-
 void Client::sendErrorResponse(const std::string& error){
 	std::stringstream response;
     size_t spacePos = error.find(' ');
@@ -200,8 +172,6 @@ void Client::sendErrorResponse(const std::string& error){
 	if (send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0) <= 0)
 		return; //closes the connection immediately
 }
-
-
 
 void Client::parseRequest(){
 	std::stringstream requeststream(request.c_str());
@@ -519,9 +489,9 @@ int Client::handleRequest(){
 			for (size_t i = 0; i < multiparts.size(); i++){
 				request = multiparts[i];
 				std::cout << request << std::endl;
-				std::cout << " = made it handle" << std::endl;
+				std::cout << " = made it handle nr: "  << i << std::endl;
 				std::string dir = target_server.getdirectory();
-				parseRoutemulti(0, dir, multibody[i]);
+				parseRoutemulti(0, dir, multibody[i], i);
 			}
 		}
 		else{
