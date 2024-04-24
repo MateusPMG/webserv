@@ -154,7 +154,6 @@ bool deletedirectory(const char* path){
 }
 
 void Client::sendErrorResponse(const std::string& error){
-	std::stringstream response;
     size_t spacePos = error.find(' ');
     std::string errorCode = error.substr(0, spacePos);
 	std::string errorpage = target_server.geterrorpage();
@@ -175,27 +174,29 @@ void Client::sendErrorResponse(const std::string& error){
 				http_response += "Content-Length: " + intToString(html_content.size()) + "\r\n";
 				http_response += "\r\n";
 				http_response += html_content;
+				std::cout << http_response << " ok here" << std::endl;
 				if (send(client_socket_fd, http_response.c_str(), http_response.size(), 0) <= 0)
-					return;
+					throw std::runtime_error("500 Internal Server Error");
 				return;
 			}
 			std::cout << "didnt enter" << std::endl;
 		}
 	}
     std::string errorReason = error.substr(spacePos + 1);
-    response << "HTTP/1.1 " << errorCode << " " << errorReason << "\r\n";
-    response << "Content-Type: text/html\r\n\r\n";
-    response << "<!DOCTYPE html>\r\n";
-    response << "<html>\r\n";
-    response << "<head><title>" << errorCode << " " << errorReason << "</title></head>\r\n";
-    response << "<body>\r\n";
-    response << "<h1>" << errorCode << " " << errorReason << "</h1>\r\n";
-    response << "<p>" << errorReason << "</p>\r\n";
-    response << "</body>\r\n";
-    response << "</html>\r\n"; 
-	std::string responseStr = response.str();
-	if (send(client_socket_fd, responseStr.c_str(), responseStr.length(), 0) <= 0)
-		return; //closes the connection immediately
+   	std::string response = "HTTP/1.1 " + errorCode + "\r\n";
+    response += "Content-Type: text/html\r\n";
+	std::ifstream file("error_page.html");
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+	response += "Content-Length: " + intToString(buffer.str().size()) + "\r\n";
+    response += "\r\n";
+    response += buffer.str();
+	//std::remove("error_page.html");
+	std::cout << response << " response here" << std::endl;
+	if (send(client_socket_fd, response.c_str(), response.size(), 0) <= 0)
+		throw std::runtime_error("500 Internal Server Error");
+	return;
 }
 
 void Client::parseRequest(){
@@ -297,7 +298,8 @@ void Client::handletryfile(std::string path) {
     httpResponse += "Content-Type: text/html\r\n";
     httpResponse += "Content-Length: " + intToString(fileContent.length()) + "\r\n\r\n";
     httpResponse += fileContent;
-    send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);
+    if (send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0) <= 0)
+		throw std::runtime_error("500 Internal Server Error");
 	return;
 }
 
@@ -325,7 +327,8 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
         throw std::runtime_error("404 Not Found");
     }
     std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + intToString(response.length()) + "\r\n\r\n" + response;
-    send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0);
+    if (send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0) <= 0)
+		throw std::runtime_error("500 Internal Server Error");
     return;
 }
 
@@ -333,12 +336,10 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
 void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route) {
 	std::string path = rqdir + rquri;
 	std::string trypath = path + "/" + location.tryfile;
+	std::cout << route << std::endl;
 	if(route == "/cgi-bin")
 	{
-		if (!rquri.empty() || rquri == "/") {
-			throw std::runtime_error("401 Unauthorized");
-		}
-		//cgi handler
+		cgiget();
 	}
 	if (!resourceexists(path))
 		throw std::runtime_error("404 Not Found6");
@@ -407,7 +408,9 @@ void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& lo
                        "\r\n"
                        "<h1>File uploaded successfully!</h1>";
 	std::cout << response << std::endl;
-    send(client_socket_fd, response.c_str(), response.length(), 0);
+    if (send(client_socket_fd, response.c_str(), response.length(), 0) <= 0)
+		throw std::runtime_error("500 Internal Server Error");
+	return;
 	}
 }
 
@@ -427,7 +430,8 @@ void Client::handledelete(std::string& rqdir, std::string& rquri, const Routes& 
 			responseStream << "Content-Length: 0\r\n";
 			responseStream << "\r\n";
 			std::string response = responseStream.str();
-			send(client_socket_fd, response.c_str(), response.length(), 0);
+			if (send(client_socket_fd, response.c_str(), response.length(), 0) <= 0)
+				throw std::runtime_error("500 Internal Server Error");
     	} else {
 			throw std::runtime_error("500 Internal Server Error");
     	}
@@ -439,7 +443,8 @@ void Client::handledelete(std::string& rqdir, std::string& rquri, const Routes& 
 		responseStream << "Content-Length: 0\r\n";
 		responseStream << "\r\n";
 		std::string response = responseStream.str();
-		send(client_socket_fd, response.c_str(), response.length(), 0);
+		if (send(client_socket_fd, response.c_str(), response.length(), 0) <= 0)
+			throw std::runtime_error("500 Internal Server Error");
 	}
 }
 
