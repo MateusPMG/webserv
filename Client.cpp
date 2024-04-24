@@ -174,26 +174,29 @@ void Client::sendErrorResponse(const std::string& error){
 				http_response += "Content-Length: " + intToString(html_content.size()) + "\r\n";
 				http_response += "\r\n";
 				http_response += html_content;
-				std::cout << http_response << " ok here" << std::endl;
 				if (send(client_socket_fd, http_response.c_str(), http_response.size(), 0) <= 0)
 					throw std::runtime_error("500 Internal Server Error");
 				return;
 			}
 			std::cout << "didnt enter" << std::endl;
 		}
+		std::cout << "went here" << std::endl;
 	}
     std::string errorReason = error.substr(spacePos + 1);
-   	std::string response = "HTTP/1.1 " + errorCode + "\r\n";
+   	std::string response =  "HTTP/1.1 " + errorCode + "\r\n";
     response += "Content-Type: text/html\r\n";
-	std::ifstream file("error_page.html");
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    file.close();
-	response += "Content-Length: " + intToString(buffer.str().size()) + "\r\n";
-    response += "\r\n";
-    response += buffer.str();
-	//std::remove("error_page.html");
-	std::cout << response << " response here" << std::endl;
+	response += "\r\n";
+	response += "<!DOCTYPE html>\n";
+	response += "<html lang=\"en\">\n";
+	response += "<head>\n";
+	response += "<meta charset=\"UTF-8\">\n";
+	response += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+	response += "<title>Error " + errorCode + "</title>\n";
+	response += "</head>\n";
+	response += "<body>\n";
+	response += "<h1>Error " + errorCode + ": " + errorReason + "</h1>\n";
+	response += "</body>\n";
+	response += "</html>\n";
 	if (send(client_socket_fd, response.c_str(), response.size(), 0) <= 0)
 		throw std::runtime_error("500 Internal Server Error");
 	return;
@@ -233,7 +236,6 @@ void Client::parseRequest(){
 		std::string headerValue;
 		std::getline(linestream1, headerName, ':');
 		std::getline(linestream1, headerValue);
-		std::cout << "header=" << headerName << "/ value=" << headerValue << std::endl;
 		std::size_t first = headerValue.find_first_not_of(' ');
 		if (first != std::string::npos)
 			headerValue.erase(0, first);
@@ -339,7 +341,7 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 	std::cout << route << std::endl;
 	if(route == "/cgi-bin")
 	{
-		cgiget();
+		//cgiget();
 	}
 	if (!resourceexists(path))
 		throw std::runtime_error("404 Not Found6");
@@ -533,11 +535,19 @@ int Client::handleRequest(){
 	catch(const std::exception& e)
 	{
 		sendErrorResponse(e.what());
+		request.clear();
+		requestbody.clear();
+		if (!multiparts.empty()){
+			multibody.clear();
+			multiparts.clear();
+		}
 		return (1);
 	}
 	request.clear();
 	requestbody.clear();
-	if (!multiparts.empty())
-		multiparts.clear();
+	if (!multiparts.empty()){
+			multibody.clear();
+			multiparts.clear();
+	}
 	return (1);
 }

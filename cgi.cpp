@@ -13,6 +13,8 @@ void Client::cgiget(){
         }
         pclose(pipe);
     }
+	else
+		return;
     // Send the response back to the client
     if (send(client_socket_fd, response.c_str(), response.size(), 0) <= 0)
 		throw (std::runtime_error("500 Internal Server Error"));

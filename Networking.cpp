@@ -94,30 +94,21 @@ Server& Networking::checktarget(const std::string& buff, Server& defaultserv){
 	size_t hostPos = buff.find("Host:");
 	std::string servname;
     if (hostPos != std::string::npos) {
-        // Extract the host information using stringstream
         std::istringstream iss(buff.substr(hostPos));
         std::string hostLine;
         std::getline(iss, hostLine);
-        // Extract the server name from the host line
-        size_t hostStartPos = hostLine.find(":") + 2; // Move past the ": "
+        size_t hostStartPos = hostLine.find(":") + 2;
         servname = hostLine.substr(hostStartPos);
-        // Trim any leading or trailing whitespace
         size_t endPos = servname.find("\r");
         if (endPos != std::string::npos) {
             servname = servname.substr(0, endPos);
         }
 	}
-	std::cout << servname << " = request serv name\n";
 	if (servname.find(":") != std::string::npos){
 		if (servname.substr(0, servname.find(":")) == "localhost"){
 			servname = "127.0.0.1" + servname.substr(servname.find(":"));
 		}
-		std::cout << servname << " after subs" << std::endl;
 		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it){
-			std::cout << it->gethost() << " host \n";
-			std::cout << it->getservername() << " server name \n";
-			std::cout << it->getport() << " port \n";
-			std::cout << servname.substr(0, servname.find(":")) << " and " << servname.substr(servname.find(":") + 1) << std::endl;
  			if (servname.substr(0, servname.find(":")) == it->gethost() && servname.substr(servname.find(":") + 1) == inttostring(it->getport())){
 				std::cout << "made it here\n";
 				return (*it);
@@ -195,6 +186,7 @@ void Networking::runservers(){
 				}
 				catch(const std::string& e)
 				{
+					std::cout << "omg im an idiot" << std::endl;
 					std::stringstream response;
 					size_t spacePos = e.find(' ');
 					std::string errorCode = e.substr(0, spacePos);
