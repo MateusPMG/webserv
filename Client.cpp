@@ -341,7 +341,8 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 	std::cout << route << std::endl;
 	if(route == "/cgi-bin")
 	{
-		//cgiget();
+		cgiget();
+		return;
 	}
 	if (!resourceexists(path))
 		throw std::runtime_error("404 Not Found6");
