@@ -85,8 +85,13 @@ void Networking::receiveRequest(int clientindex, int fd, int pollindex){
 	if ((read_byte_n = recv(fd, buff, 4096, 0)) > 0){
 		clients[clientindex].addRequest(buff, read_byte_n);
 	}
-	else
+	else if (read_byte_n == 0)
 		closeConnection(pollindex, clientindex);
+	else if (read_byte_n == -1){
+		throw std::runtime_error("500 Internal Server Error");
+		closeConnection(pollindex, clientindex);
+	}
+
 }
 
 Server& Networking::checktarget(const std::string& buff, Server& defaultserv){
@@ -209,7 +214,7 @@ void Networking::runservers(){
 								http_response += "\r\n";
 								http_response += html_content;
 								if (send(clients[clientindex].client_socket_fd, http_response.c_str(), http_response.size(), 0) <= 0)
-									return;
+									throw std::runtime_error("500 Internal Server Error");
 								return;
 							}
 							std::cout << "didnt enter" << std::endl;
@@ -227,7 +232,8 @@ void Networking::runservers(){
 						"<p>The requested resource could not be found.</p>\r\n"
 						"</body>\r\n"
 						"</html>\r\n";
-					send(clients[clientindex].client_socket_fd, responses.c_str(), responses.length(), 0);
+					if (send(clients[clientindex].client_socket_fd, responses.c_str(), responses.length(), 0) <= 0)
+						throw std::runtime_error("500 Internal Server Error");
 					std::cerr << e << '\n';
 					closeConnection(i, clientindex);
 				}

@@ -50,6 +50,7 @@
 		"ctime": "cpp",
 		"compare": "cpp",
 		"concepts": "cpp",
-		"numbers": "cpp"
+		"numbers": "cpp",
+		"csignal": "cpp"
 	}
 }

@@ -59,12 +59,10 @@ void Client::parseRoutemulti(int exit, std::string requestdirectory, std::string
 
 void Client::handlemultipost(std::string& rqdir, std::string& rquri ,std::string& rbody, const Routes& location, const std::string& route, size_t i){
 	(void)rqdir;
+	(void)rquri;
 	if(route == "/cgi-bin")
 	{
-		if (!rquri.empty() || rquri == "/") {
-			throw std::runtime_error("401 Unauthorized");
-		}
-		//cgi handler
+		cgipost(rbody);
 		return;
 	}
 	if (location.uploadpath.empty()){

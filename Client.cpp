@@ -282,6 +282,8 @@ void Client::parseRequest(){
 			// If no bytes were read, and the expected bytes haven't been read yet, it's an error
 			throw std::runtime_error("Incomplete request body");
 		}
+		if (bytesJustRead == -1)
+			throw std::runtime_error("500 Internal Server Error");
 		bytesRead += bytesJustRead;
 	}
 	std::cout << " oi\n";
@@ -378,12 +380,10 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 
 void Client::handlepost(std::string& rqdir, std::string& rquri, const Routes& location, const std::string& route){
 	(void)rqdir;
+	(void)rquri;
 	if(route == "/cgi-bin")
 	{
-		if (!rquri.empty() || rquri == "/") {
-			throw std::runtime_error("401 Unauthorized");
-		}
-		//cgi handler
+		cgipost(requestbody);
 		return;
 	}
 	if (location.uploadpath.empty()){
