@@ -392,6 +392,23 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		}
 	}
 	else{
+		if (path.find("var/www/uploads/") != std::string::npos){
+			std::ifstream file(path.c_str(), std::ios::binary);
+		if (!file.is_open()) {
+			throw std::runtime_error("404 Not Found6");
+		} else {
+			std::string response;
+			response = "HTTP/1.1 200 OK\r\n";
+			response += "\r\n";
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::string fileContent = buffer.str();
+			response += fileContent;
+			std::cout << response << "=response here" << std::endl;
+			send(client_socket_fd, response.c_str(), response.size(), 0);
+		}
+			return;
+		}
 		std::cout << "here4" << std::endl;
 		handletryfile(trypath);
 	}
