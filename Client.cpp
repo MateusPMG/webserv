@@ -307,9 +307,29 @@ void Client::handletryfile(std::string path) {
 	return;
 }
 
-void Client::handledirlist(std::string& rqdir, std::string& rquri) {
-    (void)rquri;
+void Client::handledirlist(std::string& rqdir,const std::string& rquri) {
 	std::string response;
+	std::cout << rquri << std::endl;
+	std::string path = target_server.getdirectory() + "/" + target_server.getindex();
+	if (rquri == "/"){
+		std::ifstream indexFile(path.c_str());
+		if (!indexFile.is_open()) {
+			throw std::runtime_error("500 Internal Server Error");
+		}
+		std::stringstream buffer;
+		buffer << indexFile.rdbuf();
+		std::string indexContent = buffer.str();
+		std::stringstream rresponse;
+		rresponse << "HTTP/1.1 200 OK\r\n";
+		rresponse << "Content-Type: text/html\r\n";
+		rresponse << "Content-Length: " << indexContent.length() << "\r\n";
+		rresponse << "\r\n";
+		rresponse << indexContent;
+		std::string httpResponse = rresponse.str();
+		if (send(client_socket_fd, httpResponse.c_str(), httpResponse.length(), 0) <= 0)
+			throw std::runtime_error("500 Internal Server Error");
+		return;
+	}
     DIR* dir = opendir(rqdir.c_str());
     if (dir != NULL) {
         struct dirent* entry;
@@ -321,7 +341,6 @@ void Client::handledirlist(std::string& rqdir, std::string& rquri) {
             struct stat fileStat;
             std::string filepath = rqdir + "/" + filename;
             if (stat(filepath.c_str(), &fileStat) == 0) {
-                // Append filename to the response without creating a link
                 response += "<li>" + filename + "</li>";
             }
         }
@@ -368,7 +387,7 @@ void Client::handleget(std::string& rqdir, std::string& rquri, const Routes& loc
 		}
 		else {
 			std::cout << "here3" << std::endl;
-			handledirlist(path, rquri);
+			handledirlist(path, route);
 			return;
 		}
 	}
@@ -425,7 +444,6 @@ void Client::handledelete(std::string& rqdir, std::string& rquri, const Routes& 
 		if (!resourceexists(path)) {
 		throw std::runtime_error("404 Not Found del1");
 	}
-
 	if (isdirectory(path)) {
 		if (deletedirectory(path.c_str())) {
 			std::stringstream responseStream;
